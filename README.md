@@ -15,7 +15,8 @@ You can simply use it in this way:
       b.doFinal(hash, 0); // result now holds the hash value (64 byte)
 
 You can also set a 16 byte salt value and a 16 byte personalization string. 
-The Tree Hashing Mode is not implemented. 
+The Tree Hashing Mode is not implemented. There is also a Java implementation of Joubin Mohammad Houshyar which includs the Tree Hashing Mode. You can find it at:
+https://github.com/alphazero/Blake2b
 
 Author: Axel von dem Bruch
 
