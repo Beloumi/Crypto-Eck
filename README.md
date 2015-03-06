@@ -18,4 +18,5 @@ You can also set a 16 byte salt value and a 16 byte personalization string.
 The Tree Hashing Mode is not implemented. 
 
 Author: Axel von dem Bruch
+
 Contact: info@eck.cologne
