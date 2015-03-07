@@ -73,7 +73,8 @@ import java.util.Arrays;
 
 public class Blake2b {
 	
-	private final static long blake2b_IV[] = // Blake2b Initialization Vector: 
+	private final static long blake2b_IV[] = 
+			// Blake2b Initialization Vector: 
 			// Produced from the square root of primes 2, 3, 5, 7, 11, 13, 17, 19.
 			// The same as SHA-512 IV.
 		{
@@ -105,27 +106,36 @@ public class Blake2b {
 	// General parameters:
 	private int digestLength = 64; // 1- 64 bytes 
 	private int keyLength = 0; // 0 - 64 bytes for keyed hashing for MAC
-	private byte[] salt = null;//new byte[16]; // 16 bytes
-	private byte[] personalization = null;//new byte[16]; // 16 bytes
+	private byte[] salt = null;//new byte[16];
+	private byte[] personalization = null;//new byte[16];
 	
-	// Tree hashing parameters: only used to initialize chainValue
-	private int fanout = 1; // 0-255, not used here
-	private int depth = 1; // 1 - 255, not used here
-	private int leafLength= 0; // not used here
-	private long nodeOffset = 0L; // not used here
-	private int nodeDepth = 0; // not used here
-	private int innerHashLength = 0; // not used here
+	// Tree hashing parameters: 
+	// Because this class does not implement the Tree Hashing Mode,
+	// these parameters can be treated as constants (see init() function)
+/*	private int fanout = 1; // 0-255
+	private int depth = 1; // 1 - 255
+	private int leafLength= 0; 
+	private long nodeOffset = 0L;
+	private int nodeDepth = 0; 
+	private int innerHashLength = 0; 
+*/	
 	
+	// whenever this buffer overflows, it will be processed 
+	// in the compress() function. 
+	// For performance issues, long messages will not use this buffer. 
 	private byte[] buffer = null;//new byte[BLOCK_LENGTH_BYTES];
-	private int bufferPos = 0;
+	// Position of last inserted byte:
+	private int bufferPos = 0;// a value from 0 up to 128
 
-	private long[] internalState = new long[16]; // v
-	private long[] chainValue = null; // state vector h
+	private long[] internalState = new long[16]; // In the Blake2b paper it is called: v
+	private long[] chainValue = null; // state vector, in the Blake2b paper it is called: h
 	
 	private long t0 = 0L; // holds last significant bits, counter (counts bytes)
 	private long t1 = 0L; // counter: Length up to 2^128 are supported
 	private long f0 = 0L; // finalization flag, for last block: ~0L
-	private long f1 = 0L; // finalization flag, for last node: ~0L - not used here
+	
+	// For Tree Hashing Mode, not used here:
+//	private long f1 = 0L; // finalization flag, for last node: ~0L 
 	
 	public Blake2b() {
 		buffer = new byte[BLOCK_LENGTH_BYTES];
@@ -135,12 +145,14 @@ public class Blake2b {
 	}
 	public Blake2b(byte[] key) {
 		buffer = new byte[BLOCK_LENGTH_BYTES];
-		if (key.length > 64) {
-			throw new IllegalArgumentException("Keys > 64 are not supported");
-		}
-		keyLength = key.length;
-		System.arraycopy(key, 0, buffer, 0, key.length);
-		bufferPos = BLOCK_LENGTH_BYTES; // zero padding
+		if (key != null) {
+			if (key.length > 64) {
+				throw new IllegalArgumentException("Keys > 64 are not supported");
+			}
+			keyLength = key.length;
+			System.arraycopy(key, 0, buffer, 0, key.length);
+			bufferPos = BLOCK_LENGTH_BYTES; // zero padding
+		} 
 		digestLength = 64;
 		init();
 	}
@@ -176,7 +188,7 @@ public class Blake2b {
 			keyLength = key.length;
 			System.arraycopy(key, 0, buffer, 0, key.length);
 			bufferPos = BLOCK_LENGTH_BYTES; // zero padding
-		}
+		} 
 		init();
 	}
 	
@@ -186,10 +198,12 @@ public class Blake2b {
 		if (chainValue == null){
 			chainValue = new long[8];
 
-			chainValue[0] = blake2b_IV[0] ^ ( digestLength | (keyLength << 8) 
-					| (fanout << 16) | (depth << 24) | (leafLength << 32));
-			chainValue[1] = blake2b_IV[1] ^ nodeOffset;
-			chainValue[2] = blake2b_IV[2] ^ ( nodeDepth | (innerHashLength << 8) );
+			chainValue[0] = blake2b_IV[0] ^ ( digestLength | (keyLength << 8) | 0x1010000);
+				// 0x1010000 = ((fanout << 16) | (depth << 24) | (leafLength << 32)); 
+				// with fanout = 1; depth = 0; leafLength = 0;
+			chainValue[1] = blake2b_IV[1];// ^ nodeOffset; with nodeOffset = 0;
+			chainValue[2] = blake2b_IV[2];// ^ ( nodeDepth | (innerHashLength << 8) );
+			// with nodeDepth = 0; innerHashLength = 0;
 			
 			chainValue[3] = blake2b_IV[3];
 			
@@ -217,19 +231,36 @@ public class Blake2b {
 		internalState[12] = t0 ^ blake2b_IV[4];
 		internalState[13] = t1 ^ blake2b_IV[5];
 		internalState[14] = f0 ^ blake2b_IV[6];
-		internalState[15] = f1 ^ blake2b_IV[7];
+		internalState[15] = blake2b_IV[7];// ^ f1 with f1 = 0
 	}
 	
+	/**
+	 * Processes the given message
+	 * 
+	 * @param message
+	 *            byte array containing the message to be processed
+	 */
 	public void update(byte[] message) {
 
 		update(message, 0, message.length);
 	}
 	
+	/**
+	 * Processes a number of bytes of the given message 
+	 * from a start position up to offset+len
+	 * 
+	 * @param message
+	 *            byte array containing the message to be processed
+	 * @param offset
+	 *            position of message to start from
+	 * @param len
+	 *            number of bytes to be processed.
+	 */
 	public void update(byte[] message, int offset, int len) {
 		
 		if (message == null || len == 0) return;
 		
-		int remainingLength = 0;
+		int remainingLength = 0; // left bytes of buffer
 		
 		if (bufferPos != 0) { // commenced, incomplete buffer
 
@@ -239,7 +270,7 @@ public class Blake2b {
 				System.arraycopy(message, offset, buffer, bufferPos, 
 						remainingLength);
 				t0 += BLOCK_LENGTH_BYTES;
-				if (t0 == 0) {
+				if (t0 == 0) { // if message > 2^64
 					t1++;	
 				}
 				compress(buffer, 0);
@@ -270,16 +301,23 @@ public class Blake2b {
 		bufferPos += offset + len - messagePos;
 	}
 	
-	
+	/**
+	 * Calculates the final digest value and resets the digest
+	 * 
+	 * @param out
+	 * 			the calculated digest will be copied in this array
+	 * @param outOffset
+	 * 			start position of the array out, where the digest is copied
+	 */	
 	public void doFinal(byte[] out, int outOffset) {
 
 		f0 = 0xFFFFFFFFFFFFFFFFL;
 		t0 += bufferPos;
-		// bufferPos may be < 128, so (t0 == 0) may not work
+		// bufferPos may be < 128, so (t0 == 0) does not work 
+		// for  2^64 < message length > 2^64 - 127
 		if ( (t0 < 0) && (bufferPos > -t0) ) {
 			t1++;
 		}
-
 		compress(buffer, 0);
 		Arrays.fill(buffer,  (byte) 0);// Holds eventually the key if input is null
 		Arrays.fill(internalState, 0L);
@@ -288,6 +326,13 @@ public class Blake2b {
 			System.arraycopy(long2bytes(chainValue[i]), 0, out, i * 8, 8);
 		}
 		Arrays.fill(chainValue, 0L);		
+	}
+	
+	/**
+	 * Reset the hash function 
+	 */
+	public void reset() {
+		//  nothing to do	
 	}
 	
 	private void compress(byte[] message, int messagePos) {
