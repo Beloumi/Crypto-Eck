@@ -133,7 +133,8 @@ public class Blake2b {
 	private long t0 = 0L; // holds last significant bits, counter (counts bytes)
 	private long t1 = 0L; // counter: Length up to 2^128 are supported
 	private long f0 = 0L; // finalization flag, for last block: ~0L
-	
+
+
 	// For Tree Hashing Mode, not used here:
 //	private long f1 = 0L; // finalization flag, for last node: ~0L 
 	
@@ -345,17 +346,17 @@ public class Blake2b {
 		}
 
 		for (int round = 0; round < ROUNDS; round++) {
-
-			// G apply to columns of internalState:
-		    G(m, 0, round, 0,4,8,12); 
-		    G(m, 1, round, 1,5,9,13); 
-		    G(m, 2, round, 2,6,10,14); 
-		    G(m, 3, round, 3,7,11,15); 
+			
+			// G apply to columns of internalState:m[blake2b_sigma[round][2 * blockPos]] /+1
+		    G(m[blake2b_sigma[round][0]], m[blake2b_sigma[round][1]], 0,4,8,12); 
+		    G(m[blake2b_sigma[round][2]], m[blake2b_sigma[round][3]], 1,5,9,13); 
+		    G(m[blake2b_sigma[round][4]], m[blake2b_sigma[round][5]], 2,6,10,14); 
+		    G(m[blake2b_sigma[round][6]], m[blake2b_sigma[round][7]], 3,7,11,15); 
 		    // G apply to diagonals of internalState:
-		    G(m, 4, round, 0,5,10,15); 
-		    G(m, 5, round, 1,6,11,12); 
-		    G(m, 6, round, 2,7,8,13); 
-		    G(m, 7, round, 3,4,9,14); 
+		    G(m[blake2b_sigma[round][8]], m[blake2b_sigma[round][9]], 0,5,10,15); 
+		    G(m[blake2b_sigma[round][10]], m[blake2b_sigma[round][11]], 1,6,11,12); 
+		    G(m[blake2b_sigma[round][12]], m[blake2b_sigma[round][13]], 2,7,8,13); 
+		    G(m[blake2b_sigma[round][14]], m[blake2b_sigma[round][15]], 3,4,9,14); 
 		}
 
 		// update chain values: 
@@ -365,13 +366,13 @@ public class Blake2b {
 	}
 	
 
-	private void G(long[] m, int blockPos,  int round, int posA, int posB, int posC, int posD) {
+	private void G(long m1, long m2, int posA, int posB, int posC, int posD) {
 
-		internalState[posA] = internalState[posA] + internalState[posB] + m[blake2b_sigma[round][2 * blockPos]]; 
+		internalState[posA] = internalState[posA] + internalState[posB] + m1; 
 	    internalState[posD] = rotr64(internalState[posD] ^ internalState[posA], 32); 
 	    internalState[posC] = internalState[posC] + internalState[posD]; 
 	    internalState[posB] = rotr64(internalState[posB] ^ internalState[posC], 24); // replaces 25 of BLAKE
-	    internalState[posA] = internalState[posA] + internalState[posB] + m[blake2b_sigma[round][2*blockPos +1]]; 
+	    internalState[posA] = internalState[posA] + internalState[posB] + m2; 
 	    internalState[posD] = rotr64(internalState[posD] ^ internalState[posA], 16); 
 	    internalState[posC] = internalState[posC] + internalState[posD]; 
 	    internalState[posB] = rotr64(internalState[posB] ^ internalState[posC], 63); // replaces 11 of BLAKE
