@@ -247,6 +247,34 @@ public class Blake2b {
 	}
 	
 	/**
+	 * Processes one single byte
+	 * 
+	 * @param b
+	 *            single byte to be processed
+	 */
+	public void update(byte b) {
+		
+		int remainingLength = 0; // left bytes of buffer
+
+		// process the buffer if full else add to buffer:	
+		remainingLength = BLOCK_LENGTH_BYTES - bufferPos;
+		if (remainingLength == 0) { // full buffer 
+			t0 += BLOCK_LENGTH_BYTES;
+			if (t0 == 0) { // if message > 2^64
+				t1++;	
+			}
+			compress(buffer, 0);
+			Arrays.fill(buffer,  (byte) 0);// clear buffer
+			buffer[0] = b;
+			bufferPos = 1;
+		} else {
+			buffer[bufferPos] = b;
+			bufferPos ++;
+			return;
+		}
+	}
+	
+	/**
 	 * Processes a number of bytes of the given message 
 	 * from a start position up to offset+len
 	 * 
@@ -303,7 +331,7 @@ public class Blake2b {
 	}
 	
 	/**
-	 * Calculates the final digest value and resets the digest
+	 * Calculates the final digest value 
 	 * 
 	 * @param out
 	 * 			the calculated digest will be copied in this array
@@ -330,10 +358,19 @@ public class Blake2b {
 	}
 	
 	/**
-	 * Reset the hash function 
+	 * Reset the hash function to use again after doFinal().
+	 * This will not work for keyed Digests. 
 	 */
 	public void reset() {
-		//  nothing to do	
+		bufferPos = 0;
+		f0 = 0L;
+		t0 = 0L;
+		t1 = 0L;
+		chainValue = null;
+		if (keyLength > 0) {
+			throw new IllegalStateException("Can not reset keyed Digest");
+		}
+		init();
 	}
 	
 	private void compress(byte[] message, int messagePos) {
