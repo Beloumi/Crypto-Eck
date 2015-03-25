@@ -1,4 +1,4 @@
-# eck.cologne.crypto
+# Crypto-Eck
 cryptographic stuff
 
 This is as a collection of cryptographic stuff, which is yet not included into a library or an application like Peafactory. 
