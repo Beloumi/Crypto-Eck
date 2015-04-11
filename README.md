@@ -6,6 +6,7 @@ This is as a collection of cryptographic stuff, which is yet not included into a
 
 Pomelo is a Password Hashing Scheme designed by Hongjun Wu. It was submitted to the Password Hashing Competition
 and became one of the nine finalists. 
+This is version v1, there is a newer version v2, which will be published here soon.
 
 
 Blake2b  is a cryptographic hash function, designed by Jean-Philippe Aumasson, Samuel Neves, Zooko Wilcox-O'Hearn, and Christian Winnerlein. 
