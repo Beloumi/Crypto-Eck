@@ -3,10 +3,19 @@ cryptographic stuff
 
 This is as a collection of cryptographic stuff, which is yet not included into a library or an application like Peafactory. 
 
+The package password_hashing is still a bit raw. 
+It may perhaps be used in future to compare some password hashing schemes. 
+Bcrypt and Battcrypt require Bouncy Castles lightweight Crypto API. 
 
 Pomelo is a Password Hashing Scheme designed by Hongjun Wu. It was submitted to the Password Hashing Competition
 and became one of the nine finalists. 
-This is version v1, there is a newer version v2, which will be published here soon.
+There is also a newer version v3, which will be published here soon.
+
+Battcrypt was designed by Steven Thomas and is also a finalist of the Password Hshing Comptition. 
+This implementation does not contain the key derivation mode. It will be updated later. 
+
+The latest Realease 1.52 of Bouncy Castle now contains a slightly modified version of this implementation of Bcrypt. 
+It is only available here for comparison reasons. 
 
 
 Blake2b  is a cryptographic hash function, designed by Jean-Philippe Aumasson, Samuel Neves, Zooko Wilcox-O'Hearn, and Christian Winnerlein. 
