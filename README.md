@@ -3,6 +3,8 @@ cryptographic stuff
 
 This is as a collection of cryptographic stuff, which is yet not included into a library or an application like Peafactory. 
 
+Password Hashing:
+
 The package password_hashing is still a bit raw. 
 It may perhaps be used in future to compare some password hashing schemes. 
 Bcrypt and Battcrypt require Bouncy Castles lightweight Crypto API. 
@@ -17,6 +19,7 @@ This implementation does not contain the key derivation mode. It will be updated
 The latest Realease 1.52 of Bouncy Castle now contains a slightly modified version of this implementation of Bcrypt. 
 It is only available here for comparison reasons. 
 
+Digests:
 
 Blake2b  is a cryptographic hash function, designed by Jean-Philippe Aumasson, Samuel Neves, Zooko Wilcox-O'Hearn, and Christian Winnerlein. 
 
