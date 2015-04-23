@@ -51,19 +51,19 @@ import cologne.eck.dr.op.crypto.password_hashing.test.TestPomelo_v1;
 
 public class Pomelo_v1 implements PasswordHashingScheme {
 
-    int i1,i2,i3,i4;
-    long [] S; // 2 ^ (13 + m_cost) (byte)
-    int mask, index;
-    int state_size;
+	private int i1,i2,i3,i4;
+	private long [] S; // 2 ^ (13 + m_cost) (byte)
+	private int mask, index;
+	private int state_size;
     
-	// if set true: password and salt are filled immediately: 
-    private boolean wipe = false;
+	// if set true: password is filled immediately: 
+    private boolean wipePassword = false;
     
     public Pomelo_v1() {
-    	this.wipe = false;
+    	this.wipePassword = false;
     }
     public Pomelo_v1 (boolean _wipe) {
-    	this.wipe = _wipe;
+    	this.wipePassword = _wipe;
     }
 
 	@Override
@@ -103,7 +103,7 @@ public class Pomelo_v1 implements PasswordHashingScheme {
 			S[sIndex] |= ((long) (pwd[i] & 0xFF) << shift);
 			shift += 8;
 		}		
-		if (wipe == true) {
+		if (wipePassword == true) {
 			Arrays.fill(pwd,  (byte) 0);
 		}
 
@@ -124,9 +124,6 @@ public class Pomelo_v1 implements PasswordHashingScheme {
 			S[16 + saltlenLong] |= ((long) (salt[saltlenLong * 8 + i] & 0xFF) << shift);
 			shift += 8;
 		}		
-		if (wipe == true) {
-			Arrays.fill(salt,  (byte) 0);
-		}
 
 		S[20] =   ((long)(outlen & 0xff) << 16) |
 			      ((long)(salt.length & 0xff) << 8) |
@@ -193,34 +190,36 @@ public class Pomelo_v1 implements PasswordHashingScheme {
     	i3 = 0;
     	i4 = 0;
 
-	    //Step 8: generate the output
-		int outlenLong = outlen / 8 + 1; 		
-		byte[] tmp = new byte[outlenLong * 8];
-
+	    //Step 8: generate the output		
+		byte[] out = new byte[outlen];
+		int outlenLong = outlen / 8;
+		int mod = outlen % 8;
+		
 		for ( int i = S.length - outlenLong, j = 0; i < S.length; i++, j++) {
-			tmp[j * 8 + 7] = (byte) (S[i] >>> 56);
-			tmp[j * 8 + 6] = (byte) (S[i] >>> 48);
-			tmp[j * 8 + 5] = (byte) (S[i] >>> 40);
-			tmp[j * 8 + 4] = (byte) (S[i] >>> 32);
-			tmp[j * 8 + 3] = (byte) (S[i] >>> 24);
-			tmp[j * 8 + 2] = (byte) (S[i] >>> 16);
-			tmp[j * 8 + 1] = (byte) (S[i] >>> 8);
-			tmp[j * 8 + 0] = (byte) (S[i] >>> 0);
+			out[mod + j * 8 + 7] = (byte) (S[i] >>> 56);
+			out[mod + j * 8 + 6] = (byte) (S[i] >>> 48);
+			out[mod + j * 8 + 5] = (byte) (S[i] >>> 40);
+			out[mod + j * 8 + 4] = (byte) (S[i] >>> 32);
+			out[mod + j * 8 + 3] = (byte) (S[i] >>> 24);
+			out[mod + j * 8 + 2] = (byte) (S[i] >>> 16);
+			out[mod + j * 8 + 1] = (byte) (S[i] >>> 8);
+			out[mod + j * 8 + 0] = (byte) (S[i] >>> 0);
+		}
+		shift = 64 - mod * 8;
+		sIndex = S.length - (outlenLong + 1);
+		for (int i = 0; i < mod; i++) {
+			out[i] = (byte) (S[sIndex] >>> shift);
+			shift += 8;
 		}
 		
-		byte[] out = new byte[outlen];
-		System.arraycopy(tmp, tmp.length - outlen, out,  0,  outlen);
-		Arrays.fill(tmp,  (byte) 0);
     	Arrays.fill(S, 0L);
     	
 		// prevent dead code eliminations (compiler optimizations):
-		if ((S[ state_size / 8 -1] 
-				| tmp[tmp.length-1]) != 0) {
+		if (S[ state_size / 8 -1] != 0) {
 			System.err.print("zeroization failed!");
 		}
-		if ((wipe == true) && 
-				((pwd[pwd.length-1] // password
-						| salt[salt.length-1]) != 0)) {
+		if ((wipePassword == true) && 
+				(pwd[pwd.length-1] != 0)) {
 				System.err.print("zeroization failed!");				
 		}
 
@@ -245,23 +244,27 @@ public class Pomelo_v1 implements PasswordHashingScheme {
 	
 	@Override
 	/**
-	 * @return the wipe value
+	 * indicates if zeroization of password is performed or not
+	 * 
+	 * @return the wipePassword value
 	 */
-	public boolean isWipe() {
-		return wipe;
+	public boolean isWipePassword() {
+		return wipePassword;
 	}
 
 	@Override
 	/**
-	 * if true: password and salt are filled immediately with zero
+	 * zeroize the password or keep it
 	 * 
 	 * @param _wipe 
-	 * 					wipe the input parameters 
-	 * 					password and salt or not
+	 * 					true: wipe the password as soon as 
+	 * 					possible 
+	 * 					false: keep it for later use
 	 */
-	public void setWipeInput(boolean _wipe) {
-		this.wipe = _wipe;
+	public void setWipePassword(boolean _wipe) {
+		this.wipePassword = _wipe;
 	}
+
 	
 	//========================================================
 	public static void main(String[] args) {
