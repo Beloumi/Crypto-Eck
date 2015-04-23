@@ -337,8 +337,8 @@ public final class BcryptCore implements PasswordHashingScheme
     private final int[] S;	// the s-boxes
     private final int[] P;	// the p-array
     
-	// if true: password and salt are filled immediately
-	private boolean wipe = false;
+	// if true: password is filled immediately
+	private boolean wipePassword = false;
 
     public BcryptCore()
     {
@@ -604,9 +604,8 @@ public final class BcryptCore implements PasswordHashingScheme
             processTable(0, 0, P);
             processTable(P[P_SZ - 2], P[P_SZ - 1], S);
     	}    	
-    	if (wipe == true) {
+    	if (wipePassword == true) {
     		Arrays.fill(pwd,  (byte) 0);
-    		Arrays.fill(salt,  (byte) 0);
     	}
     	
     	// encrypt magicString 64 times
@@ -620,9 +619,8 @@ public final class BcryptCore implements PasswordHashingScheme
 				| S[S.length -1]) != 0) {
 			System.err.print("zeroization failed!");
 		}
-		if ((wipe == true) && 
-				((pwd[pwd.length-1] // password
-						| salt[salt.length-1]) != 0)) {
+		if ((wipePassword == true) && 
+				(pwd[pwd.length-1] != 0)) {
 				System.err.print("zeroization failed!");				
 		}	
     	return encryptedString;    	
@@ -634,15 +632,28 @@ public final class BcryptCore implements PasswordHashingScheme
 	}
 
 	@Override
-	public boolean isWipe() {
-		return wipe;
+	/**
+	 * indicates if zeroization of password is performed or not
+	 * 
+	 * @return the wipePassword value
+	 */
+	public boolean isWipePassword() {
+		return wipePassword;
 	}
 
 	@Override
-	public void setWipeInput(boolean _wipe) {
-		this.wipe = _wipe;
-		
+	/**
+	 * zeroize the password or keep it
+	 * 
+	 * @param _wipe 
+	 * 					true: wipe the password as soon as 
+	 * 					possible 
+	 * 					false: keep it for later use
+	 */
+	public void setWipePassword(boolean _wipe) {
+		this.wipePassword = _wipe;
 	}
+
 	
 	//==========================================================
 	/**
