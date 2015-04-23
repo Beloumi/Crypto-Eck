@@ -69,14 +69,14 @@ public class Battcrypt_v0 implements PasswordHashingScheme {
 	
 	private final static int IV_LENGTH_BYTE = 8;// block size of Blowfish
 	
-	// if true: password and salt are filled immediately
-	private boolean wipe = false;
+	// if true: password is filled immediately
+	private boolean wipePassword = false;
 
 	public Battcrypt_v0() {
-		this.wipe = false;
+		this.wipePassword = false;
 	}
 	public Battcrypt_v0(boolean _wipe) {
-		this.wipe = _wipe;
+		this.wipePassword = _wipe;
 	}
 	
 	@Override
@@ -122,14 +122,11 @@ public class Battcrypt_v0 implements PasswordHashingScheme {
 		sha.update(salt, 0, salt.length);
 		sha.doFinal(keyBytes, 0);
 		sha.reset();
-		if (wipe == true) {
-			Arrays.fill(salt, (byte) 0);
-		}
 		sha.update(keyBytes, 0, HASH_LENGTH_BYTE);
 		sha.update(in, 0, in.length);//password
 		sha.doFinal(keyBytes,  0);
 		sha.reset();
-		if (wipe == true) {
+		if (wipePassword == true) {
 			Arrays.fill(in,  (byte) 0);	
 		}
 		
@@ -323,9 +320,8 @@ public class Battcrypt_v0 implements PasswordHashingScheme {
 				| params.getKey()[params.getKey().length -1]) != 0) {
 			System.err.print("zeroization failed!");
 		}
-		if ((wipe == true) && 
-				((in[in.length-1] // password
-						| salt[salt.length-1]) != 0)) {
+		if ((wipePassword == true) && 
+				(in[in.length-1] != 0)) {
 				System.err.print("zeroization failed!");				
 		}		
 		return out;
@@ -336,23 +332,29 @@ public class Battcrypt_v0 implements PasswordHashingScheme {
 		return "Battcrypt";
 	}
 	
+	@Override
 	/**
-	 * @return the wipe value
+	 * indicates if zeroization of password is performed or not
+	 * 
+	 * @return the wipePassword value
 	 */
-	public boolean isWipe() {
-		return wipe;
+	public boolean isWipePassword() {
+		return wipePassword;
 	}
 
+	@Override
 	/**
-	 * if true: password and salt are filled immediately with zero
+	 * zeroize the password or keep it
 	 * 
 	 * @param _wipe 
-	 * 					wipe the input parameters 
-	 * 					password and salt or not
+	 * 					true: wipe the password as soon as 
+	 * 					possible 
+	 * 					false: keep it for later use
 	 */
-	public void setWipeInput(boolean _wipe) {
-		this.wipe = _wipe;
+	public void setWipePassword(boolean _wipe) {
+		this.wipePassword = _wipe;
 	}
+
 
 
 //========================================================================
