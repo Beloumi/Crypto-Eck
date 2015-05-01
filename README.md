@@ -11,7 +11,7 @@ Bcrypt and Battcrypt require Bouncy Castles lightweight Crypto API.
 
 Pomelo is a Password Hashing Scheme designed by Hongjun Wu. It was submitted to the Password Hashing Competition
 and became one of the nine finalists. 
-There is also a newer version v3, which will be published here soon.
+There is also key derivation function described in paper v3.
 
 Battcrypt was designed by Steven Thomas and is also a finalist of the Password Hshing Comptition. 
 This implementation does not contain the key derivation mode. It will be updated later. 
