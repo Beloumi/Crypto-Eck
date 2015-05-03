@@ -151,8 +151,8 @@ public class Pomelo_v2 implements PasswordHashingScheme {
 		if (shift == 64) {
 			shift = 0;
 		}
-		// complete long value if in.length % 8 != 0
-		// with first values of salt:
+		// complete long value if pwd.length % 8 != 0
+		// and load salt:
 		for (int saltIndex = 0; saltIndex < salt.length; saltIndex++) {
 			S[sIndex] |= ((long) (salt[saltIndex] & 0xFF) << shift);
 			shift += 8;
@@ -161,6 +161,17 @@ public class Pomelo_v2 implements PasswordHashingScheme {
 				shift = 0;
 			}
 		}	
+		// load null vector for time constance
+		// (timing attack may leak password length)
+		byte[] nullVector = new byte[ 320 ];
+		for (int nullIndex = 0; sIndex < 40; nullIndex++) {
+			S[sIndex] |= ((long) (nullVector[nullIndex] & 0xFF) << shift);
+			shift += 8;
+			if (shift == 64) { // long value completed
+				sIndex++;
+				shift = 0;
+			}
+		}
 
 		//============= 64 bytes are reserved here for extensions: ==========
 	    /* int addLen = addBytesLen / 8;
