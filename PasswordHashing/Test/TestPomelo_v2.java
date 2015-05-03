@@ -27,7 +27,7 @@ package cologne.eck.dr.op.crypto.password_hashing.test;
 
 import java.io.UnsupportedEncodingException;
 
-import cologne.eck.dr.op.crypto.password_hashing.Pomelo;
+import cologne.eck.dr.op.crypto.password_hashing.Pomelo_v2;
 
 public class TestPomelo_v2 {
 	
@@ -203,7 +203,7 @@ public class TestPomelo_v2 {
 			byte[] salt = new byte[saltlen];
 			System.arraycopy(tmpSalt,  0, salt,  0,  saltlen);
 
-			Pomelo pom = new Pomelo();		
+			Pomelo_v2 pom = new Pomelo_v2();		
 
 			byte[] out = new byte[outlen];
 			try {
@@ -240,7 +240,7 @@ public class TestPomelo_v2 {
 			int t_costX =  Integer.parseInt(EXTRA_VECTORS[i][3]);
 			int m_costX  = Integer.parseInt(EXTRA_VECTORS[i][4]);
 			
-			Pomelo pom = new Pomelo();		
+			Pomelo_v2 pom = new Pomelo_v2();		
 			byte[] out = null;
 			try {
 				out = pom.hashPassword(outlenX, pwd, saltX, t_costX, m_costX);
@@ -280,7 +280,7 @@ public class TestPomelo_v2 {
 		}
 		
 		byte[] out = null;
-		Pomelo pom = new Pomelo();		
+		Pomelo_v2 pom = new Pomelo_v2();		
 		try {
 			out = pom.hashPassword(
 				32,  
