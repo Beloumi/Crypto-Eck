@@ -1,4 +1,4 @@
-package blake2b;
+package cologne.eck.dr.op.crypto.digest;
 
 
 /**
@@ -6,7 +6,8 @@ package blake2b;
  */
 
 /*
- * Hash Function Blake2b
+ * Hash Function Blake2b includes round-reduced version for Catena
+ * 
  * Copyright (C) 2015  Axel von dem Bruch
  * 
  * This library is free software; you can redistribute it and/or
@@ -71,7 +72,8 @@ package blake2b;
 
 import java.util.Arrays;
 
-public class Blake2b {
+
+public class Blake2b implements Digest {
 	
 	private final static long blake2b_IV[] = 
 			// Blake2b Initialization Vector: 
@@ -100,7 +102,8 @@ public class Blake2b {
 		  { 14, 10,  4,  8,  9, 15, 13,  6,  1, 12,  0,  2, 11,  7,  5,  3 }
 		};
 
-	private final static int ROUNDS = 12;
+	private int rOUNDS = 12; // to use for Catenas H'
+	private int vIndex = 0; // used as vertex index for Catena
 	private final static int BLOCK_LENGTH_BYTES = 128;// bytes
 	
 	// General parameters:
@@ -139,6 +142,14 @@ public class Blake2b {
 //	private long f1 = 0L; // finalization flag, for last node: ~0L 
 	
 	public Blake2b() {
+		buffer = new byte[BLOCK_LENGTH_BYTES];
+		keyLength = 0;
+		digestLength = 64;
+		init();
+	}
+	// To use for Catena round-reduced version:
+	public Blake2b(int rounds) {
+		rOUNDS = rounds;
 		buffer = new byte[BLOCK_LENGTH_BYTES];
 		keyLength = 0;
 		digestLength = 64;
@@ -242,7 +253,9 @@ public class Blake2b {
 	 *            byte array containing the message to be processed
 	 */
 	public void update(byte[] message) {
-
+		if (message == null) {
+			return;
+		}
 		update(message, 0, message.length);
 	}
 	
@@ -264,6 +277,7 @@ public class Blake2b {
 				t1++;	
 			}
 			compress(buffer, 0);
+
 			Arrays.fill(buffer,  (byte) 0);// clear buffer
 			buffer[0] = b;
 			bufferPos = 1;
@@ -303,19 +317,21 @@ public class Blake2b {
 					t1++;	
 				}
 				compress(buffer, 0);
+				
 				bufferPos = 0;
-				Arrays.fill(buffer,  (byte) 0);// clear buffer
+				Arrays.fill(buffer,  (byte) 0);// clear buffer				
+				
 			} else {
 				System.arraycopy(message, offset, buffer, bufferPos, 
 						len);
 				bufferPos += len;
 				return;
 			}
-		}
-		
+		}	
 		// process blocks except last block (also if last block is full)
-		int messagePos;
+		int messagePos = 0;
 		int blockWiseLastPos = offset + len - BLOCK_LENGTH_BYTES;
+
 		for ( messagePos = offset + remainingLength; messagePos < blockWiseLastPos; messagePos += BLOCK_LENGTH_BYTES) { // block wise 128 bytes
 			// without buffer:
 			t0 += BLOCK_LENGTH_BYTES;
@@ -327,7 +343,7 @@ public class Blake2b {
 
 		//fill the buffer with left bytes, this might be a full block
 		System.arraycopy(message, messagePos, buffer,  0, offset + len - messagePos);	
-		bufferPos += offset + len - messagePos;
+		bufferPos += offset + len - messagePos;		
 	}
 	
 	/**
@@ -339,7 +355,7 @@ public class Blake2b {
 	 * 			start position of the array out, where the digest is copied
 	 */	
 	public void doFinal(byte[] out, int outOffset) {
-
+		
 		f0 = 0xFFFFFFFFFFFFFFFFL;
 		t0 += bufferPos;
 		// bufferPos may be < 128, so (t0 == 0) does not work 
@@ -348,24 +364,25 @@ public class Blake2b {
 			t1++;
 		}
 		compress(buffer, 0);
-		Arrays.fill(buffer,  (byte) 0);// Holds eventually the key if input is null
-		Arrays.fill(internalState, 0L);
+		bufferPos = 0;
 
-		for (int i = outOffset; i < chainValue.length; i++) {
-			System.arraycopy(long2bytes(chainValue[i]), 0, out, i * 8, 8);
-		}
-		Arrays.fill(chainValue, 0L);		
+		for (int i = 0; i < chainValue.length; i++) {
+			System.arraycopy(long2bytes(chainValue[i]), 0, out, outOffset + i * 8, 8);
+		}		
 	}
 	
 	/**
 	 * Reset the hash function to use again after doFinal().
-	 * This will not work for keyed Digests. 
+	 * This will not work for keyed digests. 
 	 */
 	public void reset() {
 		bufferPos = 0;
 		f0 = 0L;
 		t0 = 0L;
 		t1 = 0L;
+		Arrays.fill(buffer,  (byte) 0);// Holds eventually the key if input is null
+		Arrays.fill(chainValue, 0L);	
+		Arrays.fill(internalState, 0L);
 		chainValue = null;
 		if (keyLength > 0) {
 			throw new IllegalStateException("Can not reset keyed Digest");
@@ -381,21 +398,36 @@ public class Blake2b {
 		for (int j = 0; j < 16; j++) {
 			m[j] = bytes2long(message, messagePos + j*8);
 		}
-
-		for (int round = 0; round < ROUNDS; round++) {
-			
+		// single round: Catenas H'
+		if (rOUNDS == 1) {
 			// G apply to columns of internalState:m[blake2b_sigma[round][2 * blockPos]] /+1
-		    G(m[blake2b_sigma[round][0]], m[blake2b_sigma[round][1]], 0,4,8,12); 
-		    G(m[blake2b_sigma[round][2]], m[blake2b_sigma[round][3]], 1,5,9,13); 
-		    G(m[blake2b_sigma[round][4]], m[blake2b_sigma[round][5]], 2,6,10,14); 
-		    G(m[blake2b_sigma[round][6]], m[blake2b_sigma[round][7]], 3,7,11,15); 
+		    G(m[blake2b_sigma[vIndex][0]], m[blake2b_sigma[vIndex][1]], 0,4,8,12); 
+		    G(m[blake2b_sigma[vIndex][2]], m[blake2b_sigma[vIndex][3]], 1,5,9,13); 
+		    G(m[blake2b_sigma[vIndex][4]], m[blake2b_sigma[vIndex][5]], 2,6,10,14); 
+		    G(m[blake2b_sigma[vIndex][6]], m[blake2b_sigma[vIndex][7]], 3,7,11,15); 
 		    // G apply to diagonals of internalState:
-		    G(m[blake2b_sigma[round][8]], m[blake2b_sigma[round][9]], 0,5,10,15); 
-		    G(m[blake2b_sigma[round][10]], m[blake2b_sigma[round][11]], 1,6,11,12); 
-		    G(m[blake2b_sigma[round][12]], m[blake2b_sigma[round][13]], 2,7,8,13); 
-		    G(m[blake2b_sigma[round][14]], m[blake2b_sigma[round][15]], 3,4,9,14); 
-		}
+		    G(m[blake2b_sigma[vIndex][8]], m[blake2b_sigma[vIndex][9]], 0,5,10,15); 
+		    G(m[blake2b_sigma[vIndex][10]], m[blake2b_sigma[vIndex][11]], 1,6,11,12); 
+		    G(m[blake2b_sigma[vIndex][12]], m[blake2b_sigma[vIndex][13]], 2,7,8,13); 
+		    G(m[blake2b_sigma[vIndex][14]], m[blake2b_sigma[vIndex][15]], 3,4,9,14); 
+		    
+		} else {
 
+			for (int round = 0; round < rOUNDS; round++) {
+				
+				// G apply to columns of internalState:m[blake2b_sigma[round][2 * blockPos]] /+1
+			    G(m[blake2b_sigma[round][0]], m[blake2b_sigma[round][1]], 0,4,8,12); 
+			    G(m[blake2b_sigma[round][2]], m[blake2b_sigma[round][3]], 1,5,9,13); 
+			    G(m[blake2b_sigma[round][4]], m[blake2b_sigma[round][5]], 2,6,10,14); 
+			    G(m[blake2b_sigma[round][6]], m[blake2b_sigma[round][7]], 3,7,11,15); 
+			    // G apply to diagonals of internalState:
+			    G(m[blake2b_sigma[round][8]], m[blake2b_sigma[round][9]], 0,5,10,15); 
+			    G(m[blake2b_sigma[round][10]], m[blake2b_sigma[round][11]], 1,6,11,12); 
+			    G(m[blake2b_sigma[round][12]], m[blake2b_sigma[round][13]], 2,7,8,13); 
+			    G(m[blake2b_sigma[round][14]], m[blake2b_sigma[round][15]], 3,4,9,14); 
+			}
+		}
+		
 		// update chain values: 
 		for( int offset = 0; offset < chainValue.length; offset++ ) {
 			chainValue[offset] = chainValue[offset] ^ internalState[offset] ^ internalState[offset + 8];	
@@ -419,6 +451,19 @@ public class Blake2b {
 		return x >>> rot | (x << (64 - rot));
 	}
 	
+	public int getRounds() {
+		return rOUNDS;
+	}
+	public String getName(){
+		return "Blake2b";
+	}
+	/**
+	 * This function is used for password hashing scheme
+	 * Catenas round-reduced version H'
+	 */
+	public void setVertexIndex(int _vIndex) {
+		vIndex = _vIndex;
+	}
 	// convert one long value in byte array
 	// little-endian byte order!
 	public final static byte[] long2bytes(long longValue) {
