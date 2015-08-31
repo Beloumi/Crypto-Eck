@@ -1,11 +1,11 @@
 # Crypto-Eck
 cryptographic stuff
 
-This is as a collection of cryptographic stuff, which is yet not included into a library or an application like Peafactory. 
+This is as a collection of cryptographic stuff, which is yet not included into a library or an application. 
 
 Password Hashing:
 
-The package password_hashing is still a bit raw. 
+The package password hashing is still a bit raw. 
 It may perhaps be used in future to compare some password hashing schemes. 
 Bcrypt and Battcrypt require Bouncy Castles lightweight Crypto API. 
 
@@ -15,6 +15,9 @@ There is also key derivation function described in paper v3.
 
 Battcrypt was designed by Steven Thomas and is also a finalist of the Password Hshing Comptition. 
 This implementation does not contain the key derivation mode. It will be updated later. 
+
+Catena is a Password-Scrambling Framework designed by Christian Forler, Stefan Lucks and Jakob Wenzel. The Password Hashing Competition gave special recognition to Catena and three other schemes. 
+There are two instances: Catena-Dragonfly and Catena-Butterfly. Both can be used with the round-reduced version H' of Blake2b and also as FULL version. 
 
 The latest Realease 1.52 of Bouncy Castle now contains a slightly modified version of this implementation of Bcrypt. 
 It is only available here for comparison reasons. 
