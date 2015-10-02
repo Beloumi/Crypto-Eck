@@ -2,7 +2,7 @@ package cologne.eck.dr.op.crypto.password_hashing;
 
 
 /**
- * @author Axel von dem Bruch
+ * version v3.2
  */
 
 /*
@@ -34,7 +34,7 @@ public abstract class Catena implements PasswordHashingScheme {
 
 	
 	protected Digest digest;// = new Blake2b();
-	protected Digest fastDigest;// = new Blake2b(1);
+	protected Digest fastDigest;// = new Catena_Blake2b_1();
 	private boolean fast = true; // use round-reduced versions or not	
 
 	// Values independent on instance:
@@ -596,10 +596,8 @@ public abstract class Catena implements PasswordHashingScheme {
 			fastDigest.setVertexIndex(vIndex % 12);
 		}
 		
-		byte[] tmp = new byte[128];
-		System.arraycopy(input1, inIndex1, tmp, 0, H_LEN);
-		System.arraycopy(input2, inIndex2, tmp, H_LEN, H_LEN);
-		fastDigest.update(tmp);
+		fastDigest.update(input1, inIndex1, H_LEN);
+		fastDigest.update(input2, inIndex2, H_LEN);
 		fastDigest.doFinal(hash, outIndex);
 		  
 		if (fast == false) {
@@ -616,7 +614,7 @@ public abstract class Catena implements PasswordHashingScheme {
 		}
 		if(fastDigest == null) {
 			if (fast == true) {
-				fastDigest = new Blake2b(1);
+				fastDigest = new Catena_Blake2b_1();
 			} else {
 				fastDigest = digest;
 			}
