@@ -1,27 +1,7 @@
 package cologne.eck.dr.op.crypto.password_hashing.test;
 
-
 /**
- * @author Axel von dem Bruch
- */
-
-/*
- * Test class for Catena-Dragonfly (v3)
- * Copyright (C) 2015  Axel von dem Bruch
- * 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * 
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- * 
- * See:  https://www.gnu.org/licenses/lgpl-2.1.html
- * You should have received a copy of the GNU General Public License 
- * along with this library.
+ * Test Vector from Paper v3.2 and from reference implementation 2015-08-11
  */
 
 
@@ -31,9 +11,9 @@ import cologne.eck.dr.op.crypto.password_hashing.CatenaBRG;
 
 public class TestCatenaBRG {
 	
-	// Test Vectors from paper v3.1 or from reference implementation v3
+	// Test Vectors from paper v3.2 or from reference implementation 2015-08-11
 
-	// Butterfly:
+	// Dragonfly FAST:
 	static final int [] Lambda = {2,2,2,2,2,2,2,2};
 	static final int [] Garlic = {1, 10, 10, 10, 10, 10, 10, 10};
 	static final byte [][] AssociatedData = {null, null, "data".getBytes(), null, 
@@ -61,31 +41,31 @@ public class TestCatenaBRG {
 		"a654c4594ebd329eb4e740460c3138f030eff6a23d51b0722488cc4cae1a484d1bd6155f5839f18de9a245ea10c758afc5ded3a245725b775978ee97d18725e6"
 	};
 	
-	// Dragonfly:
+	// Dragonfly-Full:
 	static final int [] LambdaFull = {2,2,2,2,2,2,2,2};
 	static final int [] GarlicFull = {1, 10, 10, 10, 10, 10, 10, 10};
-	static final byte [][] AssociatedDataFull = {null, null, "data".getBytes(), null, 
+	static final byte [][] AssociatedDataFull = {null, "data".getBytes(), null, null, 
 		"dataDatadataDatadataDatadataDatadataD".getBytes(), "data".getBytes(), "data".getBytes(), "data".getBytes()}; 
 	static final String[] PasswordFull = {"password", "password", "password", "passwordPASSWORDpassword", 
 		"passwordPASSWORDpasswordp",
 		"passwordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpassword", 
 		"passwordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswor", 
 		"passwordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordPASSWORDpasswordP"
-	};
+	}; 
 	static final String[] SaltFull = {"salt", "salt", "salt", "saltSALTsaltSALTsaltSALTsaltSALTsalt", 
 		"saltSALTsaltSALTsaltSALTsaltSALTsalts", "salt", "salt", "salt"
 	};
 	static final String OutputFull[] =  {
 		// test vector from paper: 
-		"525df8b26354dc7aabdc27cfb5ee3df03c25b2153df3782e3a70ee419bf9fd0d2d8ca61e41fa506aef3cdb2c3345a22564fafef32a8efc1e5aba216c546c8578",
-		"e43bda5d010ad2d10e4d5acfd78731574a6ff2b4a3fdb411ba6ffe356a44030507fd4590c988b9e27e9a45ffadc0dcc804fd14c17d05b0f100a5eb4e1cd720f1",
-		// test vector from paper - but with associated data "data": 
-		"cef7f09c6c84b80f54a7a06bf3939e61fe56864097bd28aa3a0bcf5871f1df05f3110c2b46afd1584973156b03dc249fa5825e991b81c5ff983f124ed92b65e3",
-		"cb08272ec4f98599315152004e79e3a64ceca81c8c072a81c53da53973f545bee80e65413f8c5acc09e844611e8a89458e3252fd7820d559ec1c1710a0ff8f02",
-		"d13273430743d121c7cb62ecc4fc484f9ff774ce3b039d2cf64231bc22c254c965456fc319a59cffad718ebec03949ef32177f7969c8cbeb356e037c817a2a13",
-		"eb17f4973ba56a0955b3782d51f5635bb6f1f59b69b9bbaa8bf9a3dc1c0b21be80502e9c594a18f670a51af748ea3e45882ef534bdcb89a74a1d7edab4d6334b",
-		"bf1823ab6fbc1bf8d8923db9847057d9f7a35d41ddb5c7b11ca49b84cf16b1801b01aaedd4b40b67777f2dfa1473ce80ec86dcf694ae0cb58503c9a39c06c12a",
-		"473126aefc9e84cfec974293b20d78ae695f16840822061417c7c8e35d9425d61d483e0016e3a4e4446f2f91b69f4a9257da934335f570ad31865f9ac39c5d13"
+		"3e107076cdda8696077d8b0e610b434e8659e15c091233470f9fb41f7fade1e1475b2d0932d3c9d14cf8a14f4bafb79ff6589c33aa86ef9a7d9a447026ce40ce",
+		"f2f38d02e327a9d54b4b306bcce0db4a9662b2c8e64c45fb536c958df8cd1d6531f699126dd53118ca15ac8a1772c138163654b223427516fdcfaa22fd1de601",
+		// tested with reference implementation: 
+		"4419a62bf061a5d69c9ff1e5d9be6ca5808bffb814a3eeb5636fac3e46433d313ba44c1df5d290756d4102b8dc5258ea67af32d79ee2ea413b6891bb065ae845",
+		"c3dbe46dbed4634f5f2036fc9da34fc0617ebb74403f709a7d5d66e2fe490e0eef1740e5dce8dccd0271c8e893ca3106fd2676abfa2ebd3da0a90181f3cb4451",
+		"81eff3e92afda9b97c3808525c4020a329bdeb4768f26e4c5588984c9245fa3ced6900b9fab71a250c141c86202d0bb3ed820d784b45acd526b5ed8e8e97d283",
+		"9d1105f1d671ddce6d4a252e77de967c267df98b296d7634ba612615000986839f2dfaf59a3fd152e4965e43f0e58ff729ceb25ff2d6a031411ff216c2f2d362",
+		"8f0191cb73ff6d0e1c0e9799117fae0b1d7315eeaa8b854fa90e6ed0ba52696f75032c4d1cd1e9fd55bf3e0a3a2a26a9fb82bec78ac9b0defd5935fc3f6a0002",
+		"4a22bec56352e47f4335a105a41c7301739a41ae2105173f6f43a3bff8ec378a211cc7951940d5b624e1033b60f5d8766e720ca2a7ca8426b03f9f30d7dc1c6d"
 		};
 
 	static final String OutputKeyed[] =  {
@@ -94,21 +74,24 @@ public class TestCatenaBRG {
 	//lambda 2, Garlic 10, "password", "salt", "data, UUID = -1L, Key = 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF, FAST
 	"32CF479633613560EF498DD45D469A525108AD0A2F3B7A4FA37F5C1A48E65ABCBD5A2484CFA5257B6DC3373F032223C5A703457E0E8C6AEECB1A9515F278A069",
 	//lambda 2, Garlic 1, "password", "salt", null, UUID = -1L, Key = 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF, FULL
-	"65305B9ABFDED690198E0E17C2BB573A69F97152B1E21CB11DB3427DCACD1E9861A06523800D07D1B9F456952E2E5DE2B2776111564CA29F891C4BC85E963912",
+	"097dd35e11508c7cb52fa2d6165e2984d385221b850357d8285c18232e9902740b77ee34f3249e6a1a302cf656c4485820d503d1d644b11bae3c2ed42c34fca4",
 	//lambda 2, Garlic 10, "password", "salt", "data", UUID = -1L, Key = 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF, FULL
-	"6BB62E4E64378AB2C7C8BFF16CD5CDE8059CFFEE60E68AC779662B006FF767E37031AFCC24EEAA0F365C32476D14A8902F04034AC42F90B5B70385CF6697987E"
+	"57b253d0eb949b68d8242ff153a688c36da8cb661117e796100171d5e6cba583b2d63af50f944a4fb53a8ba679ba4d379cb00961fcec205cd2f33da342a11b9c"
 	};
 	
-	// Computed by reference implementation v3 for key derivation function
-	// "password", "salt", "data", lambda 2, garlic 10
+	// Computed by reference implementation v3.2 for key derivation function
+	// "password", "salt", "data", lambda 2, garlic 10	
 	static final String [] catenaKG = {
-		"4acbc7acc1da446f41abb2ecb807494b208ddeef59086a18ea7b1a3de6d91adf5c665e3116e9de5d3cda62e88454a72c9dbd68647c5582986d81943c54525d17b66d5167ad037b4552611d0fe25afde133af644312ae9e37456eed9ee27c063e8c2fc197eb5e5cfbf4a50691a5c0b5ecba3c4b2b094134e70096ac1e245f33fb2a",
-		"f5a3365a1547dc6b589d93317123c4cf1729b28963e75239d5befde670ae03a18d80a09cf97d5f23a3009b816e263b31a8cf997870ad60f8188c46e63766c081bc4354a270f8e3815c16fb3ec3995345d610c6a03a20d01c2f147bf208d4528e9d8270cd55babf36c2b5fd2bb99656e1861015a5f63579d55715f0bd239617b1",
-		"a33479136d0e37679ae5bf39adb281acd841551e5b26fc1ecf1fd82e3fabdf9677b295d8763827f91e391606849bcc7c8c4cff6a3e5d326b901e87239466e0694e4cf7b8e027d5213a2a0f09990474d953402307d1156d8d20d7288feeb5356da5e1619c302c6385bed46b93d16a63acf38cd0959d8f0f2f8fc00ed9751ea4"};
+		// keylen 129
+		"7b13c8dcd6d0e14f8944b9315d7348f49bfadbe0aa5e89c06806892f35385fcff956c69db577053d83dd8c5f0c456684c9f0c842c1b23fc794ba444092bcd5608cd87fdcff63465a5ab6c9abcec3026858d8d81b9ee5bb366562bcd8a0ca20c608df628bd69ff451727d5c993628c4a8571ab12fb55bde9a2be8d9c014976caf54",
+		// keylen 128
+		"063595ac2d0043af929966367b5c86938a7de47035156aaf816ab63eed74ca8be5dd9cbee9328fd34565850a85cb803f315ec0494bf792b6a7d76897a10237e2c90e3b1edc5fae7c6b9d0368605d5705fa2f7f323f23bb3fd0bafd48922aefaddca32c2207375ff3d87a904944ccec474c671b4557d4184c212ca6a60baa3f4a",
+		// keylen 127
+		"216e44dd4439676f6377bbd42f0317c7524b3d6839aad7a6c815439242b1ebb303831c67863829f1f8e86dae5c661ff379724eba293ca1d778369986a12b65e8a070e329a377caf5d8224c30941d1060958043b10a156620782494de23ea2bea671746b23f40bf4f37579171681ae8945aa51cd473bbd6ebfdc3d31f6650c2"};
 
 
 
-	// test vectors produced from reference implementation v3
+	// test vectors produced from reference implementation v3.2
 	private final static String[] phcTestVectors = {	
 	"bf866dd7833d286e2e80cd5454c3ec0c95304bd1fb5a5b7a1a5f805c54a9d052",
 	"31f0d95147d3f562ae6d23506adf679fd499dadf12b6ca1c2a21e22098d27eb5",
@@ -751,7 +734,8 @@ public class TestCatenaBRG {
 		System.out.println("\n\n========== Dragonfly-FULL =============\n");
 		System.out.println("Password, Salt, Data, Garlic, Lambda");
 		hash = new byte[64];
-		for (int i = 0; i < 8; i++) {
+		int len = PasswordFull.length;
+		for (int i = 0; i < len; i++) {
 			cat = new CatenaBRG(false);
 			
 			System.out.println(cat.getVersionID());
@@ -782,7 +766,7 @@ public class TestCatenaBRG {
 		hash = new byte[64];
 		for (int i = 0; i < 8; i++) {
 			Catena catCI = new CatenaBRG(true);
-			System.out.println(cat.getVersionID());
+			System.out.println(catCI.getVersionID());
 
 			System.out.print(Password[i] + "   " + Salt[i] + "   ");
 			if(AssociatedData[i] != null) {
