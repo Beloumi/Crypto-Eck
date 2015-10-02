@@ -1,12 +1,12 @@
 package cologne.eck.dr.op.crypto.password_hashing;
 
-
 /**
- * @author Axel von dem Bruch
+ * This implementation refers to: 
+ * Paper v3.2 and from reference implementation 2015-08-11
  */
 
 /*
- * Password Hashing Scheme Catena: Instance Catena-Dragonfly (v3)
+ * Password Hashing Scheme Catena: Instance Catena-Dragonfly (v3.2)
  * Copyright (C) 2015  Axel von dem Bruch
  * 
  * This library is free software; you can redistribute it and/or
@@ -24,15 +24,13 @@ package cologne.eck.dr.op.crypto.password_hashing;
  * along with this library.
  */
 
-
 import java.util.Arrays;
 
 
 public class CatenaBRG extends Catena{
 	
 	private final static String VERSION_ID = "Dragonfly";
-	// in reference implementation there is no extra Full-Version
-	private final static String VERSION_ID_FULL = "Dragonfly";//-Full";
+	private final static String VERSION_ID_FULL = "Dragonfly-Full";
 	private final static int LAMBDA = 2;//  λ (depth of F)
 	private final static int GARLIC = 21;// defines time and memory requirements
 	private final static int MIN_GARLIC = 21;// minimum garlic	
