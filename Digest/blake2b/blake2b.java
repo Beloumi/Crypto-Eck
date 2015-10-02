@@ -1,12 +1,8 @@
 package cologne.eck.dr.op.crypto.digest;
 
 
-/**
- * @author Axel von dem Bruch
- */
-
 /*
- * Hash Function Blake2b includes round-reduced version for Catena
+ * Hash Function Blake2b 
  * 
  * Copyright (C) 2015  Axel von dem Bruch
  * 
@@ -103,7 +99,6 @@ public class Blake2b implements Digest {
 		};
 
 	private int rOUNDS = 12; // to use for Catenas H'
-	private int vIndex = 0; // used as vertex index for Catena
 	private final static int BLOCK_LENGTH_BYTES = 128;// bytes
 	
 	// General parameters:
@@ -147,14 +142,7 @@ public class Blake2b implements Digest {
 		digestLength = 64;
 		init();
 	}
-	// To use for Catena round-reduced version:
-	public Blake2b(int rounds) {
-		rOUNDS = rounds;
-		buffer = new byte[BLOCK_LENGTH_BYTES];
-		keyLength = 0;
-		digestLength = 64;
-		init();
-	}
+
 	public Blake2b(byte[] key) {
 		buffer = new byte[BLOCK_LENGTH_BYTES];
 		if (key != null) {
@@ -398,38 +386,23 @@ public class Blake2b implements Digest {
 		for (int j = 0; j < 16; j++) {
 			m[j] = bytes2long(message, messagePos + j*8);
 		}
-		// single round: Catenas H'
-		if (rOUNDS == 1) {
-			// G apply to columns of internalState:m[blake2b_sigma[round][2 * blockPos]] /+1
-		    G(m[blake2b_sigma[vIndex][0]], m[blake2b_sigma[vIndex][1]], 0,4,8,12); 
-		    G(m[blake2b_sigma[vIndex][2]], m[blake2b_sigma[vIndex][3]], 1,5,9,13); 
-		    G(m[blake2b_sigma[vIndex][4]], m[blake2b_sigma[vIndex][5]], 2,6,10,14); 
-		    G(m[blake2b_sigma[vIndex][6]], m[blake2b_sigma[vIndex][7]], 3,7,11,15); 
-		    // G apply to diagonals of internalState:
-		    G(m[blake2b_sigma[vIndex][8]], m[blake2b_sigma[vIndex][9]], 0,5,10,15); 
-		    G(m[blake2b_sigma[vIndex][10]], m[blake2b_sigma[vIndex][11]], 1,6,11,12); 
-		    G(m[blake2b_sigma[vIndex][12]], m[blake2b_sigma[vIndex][13]], 2,7,8,13); 
-		    G(m[blake2b_sigma[vIndex][14]], m[blake2b_sigma[vIndex][15]], 3,4,9,14); 
-		    
-		} else {
 
-			for (int round = 0; round < rOUNDS; round++) {
-				
-				// G apply to columns of internalState:m[blake2b_sigma[round][2 * blockPos]] /+1
-			    G(m[blake2b_sigma[round][0]], m[blake2b_sigma[round][1]], 0,4,8,12); 
-			    G(m[blake2b_sigma[round][2]], m[blake2b_sigma[round][3]], 1,5,9,13); 
-			    G(m[blake2b_sigma[round][4]], m[blake2b_sigma[round][5]], 2,6,10,14); 
-			    G(m[blake2b_sigma[round][6]], m[blake2b_sigma[round][7]], 3,7,11,15); 
-			    // G apply to diagonals of internalState:
-			    G(m[blake2b_sigma[round][8]], m[blake2b_sigma[round][9]], 0,5,10,15); 
-			    G(m[blake2b_sigma[round][10]], m[blake2b_sigma[round][11]], 1,6,11,12); 
-			    G(m[blake2b_sigma[round][12]], m[blake2b_sigma[round][13]], 2,7,8,13); 
-			    G(m[blake2b_sigma[round][14]], m[blake2b_sigma[round][15]], 3,4,9,14); 
-			}
+		for (int round = 0; round < rOUNDS; round++) {
+			
+			// G apply to columns of internalState:m[blake2b_sigma[round][2 * blockPos]] /+1
+		    G(m[blake2b_sigma[round][0]], m[blake2b_sigma[round][1]], 0,4,8,12); 
+		    G(m[blake2b_sigma[round][2]], m[blake2b_sigma[round][3]], 1,5,9,13); 
+		    G(m[blake2b_sigma[round][4]], m[blake2b_sigma[round][5]], 2,6,10,14); 
+		    G(m[blake2b_sigma[round][6]], m[blake2b_sigma[round][7]], 3,7,11,15); 
+		    // G apply to diagonals of internalState:
+		    G(m[blake2b_sigma[round][8]], m[blake2b_sigma[round][9]], 0,5,10,15); 
+		    G(m[blake2b_sigma[round][10]], m[blake2b_sigma[round][11]], 1,6,11,12); 
+		    G(m[blake2b_sigma[round][12]], m[blake2b_sigma[round][13]], 2,7,8,13); 
+		    G(m[blake2b_sigma[round][14]], m[blake2b_sigma[round][15]], 3,4,9,14); 
 		}
 		
 		// update chain values: 
-		for( int offset = 0; offset < chainValue.length; offset++ ) {
+		for( int offset = 0; offset < 8; offset++ ) {
 			chainValue[offset] = chainValue[offset] ^ internalState[offset] ^ internalState[offset + 8];	
 		}
 	}
@@ -450,20 +423,11 @@ public class Blake2b implements Digest {
 	private long rotr64(long x, int rot) {
 		return x >>> rot | (x << (64 - rot));
 	}
-	
-	public int getRounds() {
-		return rOUNDS;
-	}
+
 	public String getName(){
 		return "Blake2b";
 	}
-	/**
-	 * This function is used for password hashing scheme
-	 * Catenas round-reduced version H'
-	 */
-	public void setVertexIndex(int _vIndex) {
-		vIndex = _vIndex;
-	}
+
 	// convert one long value in byte array
 	// little-endian byte order!
 	public final static byte[] long2bytes(long longValue) {
@@ -489,5 +453,8 @@ public class Blake2b implements Digest {
 			      (((long) byteArray[offset + 5] & 0xFF ) << 40) |
 			      (((long) byteArray[offset + 6] & 0xFF ) << 48) |
 			      (((long) byteArray[offset + 7] & 0xFF ) << 56) ) ;  	    			    		  
-	}	
+	}
+
+	@Override
+	public void setVertexIndex(int vIndex) {}	
 }
