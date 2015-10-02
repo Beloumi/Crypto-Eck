@@ -17,10 +17,7 @@ public interface Digest {
 	
 	public void reset();
 	
-	public int getRounds();
-	
 	public String getName();
 
 	public void setVertexIndex(int vIndex);
-
 }
