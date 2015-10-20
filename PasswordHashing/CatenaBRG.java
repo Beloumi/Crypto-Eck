@@ -82,26 +82,13 @@ public class CatenaBRG extends Catena{
 		}
 	}
 	
-
-	/**
-	 * Computes the hash using a Bit Reversal Graph
-	 */
-	@Override
-	protected void flap(byte[] x, int lambda, int garlic, byte[] salt, byte[] h) {
-
-		byte[]  r   = new byte[(1 << garlic) * H_LEN];
-
-		initmem(x, (1 << garlic), r);
-
-		gamma(garlic, salt, r);
-
-		F(r, garlic, lambda, h);
-	}
-	
 	@Override
 	protected void gamma(int garlic, byte[] salt, byte[] r) {
 		saltMix(garlic, salt, r);		
 	}
+	
+	@Override
+	protected void phi(byte[] r) {}
 	
 	@Override
 	protected void F(byte[] r, int garlic, int lambda, byte[] h) {
@@ -119,7 +106,10 @@ public class CatenaBRG extends Catena{
 			digest.doFinal(r, 0);
 			digest.reset();
 			  
-			fastDigest.reset();
+			if (reducedDigest != null){
+				reducedDigest.reset();
+			}
+			//fastDigest.reset();
 
 			byte[] previousR = new byte[H_LEN];
 			System.arraycopy(r, 0, previousR, 0, H_LEN);
@@ -137,7 +127,9 @@ public class CatenaBRG extends Catena{
 			digest.doFinal(r, 0);
 			digest.reset();
 		    
-		    fastDigest.reset();
+			if (reducedDigest != null){
+				reducedDigest.reset();
+			}
 
 		    int pIndex = 0;
 		    for (int i = 1; i < c; i++, pIndex += H_LEN) {
@@ -185,7 +177,6 @@ public class CatenaBRG extends Catena{
 	public int getLambda() {
 		return LAMBDA;
 	}
-
 	@Override
 	public String getAlgorithmName() {
 		return versionID;
