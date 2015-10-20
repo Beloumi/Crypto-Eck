@@ -1,9 +1,5 @@
 package cologne.eck.dr.op.crypto.digest;
 
-/*
- * This interface can be used for round-reduced version
- * of hash function. 
- */
 
 public interface Digest {
 	
@@ -18,6 +14,4 @@ public interface Digest {
 	public void reset();
 	
 	public String getName();
-
-	public void setVertexIndex(int vIndex);
 }
