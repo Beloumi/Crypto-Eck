@@ -84,27 +84,14 @@ public class CatenaDBG extends Catena {
 			setVersionID(VERSION_ID);
 		}
 	}
-
-
-	/** 
-	 * Computes the hash using a Double Butterfly Graph
-	*/
-	@Override
-	protected void flap(byte[] x, int lambda, int garlic, byte[] salt, byte[] h) {
-
-		byte[]  r   = new byte[ (int) (( (1 << garlic) + (1 << (garlic-1)) ) * H_LEN)];
-
-		initmem(x, (1 << garlic), r);
-
-		gamma(garlic, salt, r);
-
-		F(r, garlic, lambda, h);
-	}
 	
 	@Override
 	protected void gamma(int garlic, byte[] salt, byte[] r) {
 		saltMix(garlic, salt, r);		
 	}
+	
+	@Override
+	protected void phi(byte[] r) {}
 	
 	@Override
 	protected void F(byte[] r, int garlic, int lambda, byte[] h) {
@@ -166,7 +153,9 @@ public class CatenaDBG extends Catena {
 				digest.doFinal(r, (int) idx(i,0,co,c,m) * H_LEN);
 				digest.reset();	    	
 				  
-				fastDigest.reset();
+				if (reducedDigest != null){
+					reducedDigest.reset();
+				}
 
 			    for(j = 1; j < c; j++){
 
@@ -216,8 +205,6 @@ public class CatenaDBG extends Catena {
 	public int getLambda() {
 		return LAMBDA;
 	}
-	
-
 	@Override
 	public String getAlgorithmName() {
 		return versionID;
