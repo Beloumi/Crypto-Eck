@@ -106,6 +106,9 @@ public class CatenaBRG_v3_1 extends Catena{
 	}
 	
 	@Override
+	protected void phi(byte[] r) {}
+	
+	@Override
 	protected void F(byte[] r, int garlic, int lambda, byte[] h) {
 		BRG(r, garlic, lambda, h);
 	}
@@ -121,7 +124,10 @@ public class CatenaBRG_v3_1 extends Catena{
 			digest.doFinal(r, 0);
 			digest.reset();
 			  
-			fastDigest.reset();
+			if (reducedDigest != null){
+				reducedDigest.reset();
+			}
+			//fastDigest.reset();
 
 			byte[] previousR = new byte[H_LEN];
 			System.arraycopy(r, 0, previousR, 0, H_LEN);
@@ -139,7 +145,9 @@ public class CatenaBRG_v3_1 extends Catena{
 			digest.doFinal(r, 0);
 			digest.reset();
 		    
-		    fastDigest.reset();
+			if (reducedDigest != null){
+				reducedDigest.reset();
+			}
 
 		    int pIndex = 0;
 		    for (int i = 1; i < c; i++, pIndex += H_LEN) {
