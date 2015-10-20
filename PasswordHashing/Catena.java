@@ -34,7 +34,8 @@ public abstract class Catena implements PasswordHashingScheme {
 
 	
 	protected Digest digest;// = new Blake2b();
-	protected Digest fastDigest;// = new Catena_Blake2b_1();
+	protected ReducedDigest reducedDigest;// = new Catena_Blake2b_1();
+	
 	private boolean fast = true; // use round-reduced versions or not	
 
 	// Values independent on instance:
@@ -133,7 +134,7 @@ public abstract class Catena implements PasswordHashingScheme {
 	}
 	
 	/**
-	 * Catena with all possible arguments 
+	 * Catena with arguments from reference implementation 
 	 * 
 	 * @param pwd			the password
 	 * @param salt			the salt
@@ -154,10 +155,47 @@ public abstract class Catena implements PasswordHashingScheme {
 		     int lambda, int  min_garlic, int garlic, int  hashlen,
 		     int _client, int  tweak_id, 
 		     byte[] hash) {
+		_catena(
+				 pwd, salt, salt, data,  
+			     lambda, min_garlic, garlic, 
+			     _client, tweak_id, 
+			     hash);
+	}
+	
+	/**
+	 * Catena with arguments from reference implementation and a public input 
+	 * 
+	 * @param pwd			the password
+	 * @param salt			the salt
+	 * @param publicInput	the public input for the randomization layer 
+	 * 						if the salt is kept secret
+	 * @param data			the associated data or null
+	 * @param lambda		the depth of the graph
+	 * @param min_garlic	the min. Garlic
+	 * @param garlic		the cost parameter
+	 * @param hashlen		the length of the resulting hash value
+	 * @param _client		indicates if Catena uses server relief or not
+	 * @param tweak_id		the mode to run: PASSWORD_HASHING_MODE 
+	 * 						or KEY_DERIVATION_MODE 
+	 * @param hash			holds the resulting hash value, 
+	 * 						the length of this vector indicates 
+	 * 						the length of the resulting hash value
+	 */
+	public void _catena(
+			 byte[] pwd, byte[] salt, byte[] publicInput, byte[] data,  
+		     int lambda, int  min_garlic, int garlic,
+		     int _client, int  tweak_id, 
+		     byte[] hash) {
+		
+		int hashlen = hash.length;
 		
 		if((hashlen > H_LEN) || (garlic > 63) || (min_garlic > garlic) || 
 				(lambda == 0)){
 			throw new IllegalArgumentException("illegal argument for __Catena");
+		}
+		
+		if (publicInput == null && salt != null) {
+			publicInput = salt;
 		}
 
 		initDigests();
@@ -204,10 +242,10 @@ public abstract class Catena implements PasswordHashingScheme {
 		}
 
 		// provide resistance against weak garbage collector attacks:
-		flap(x, lambda, (min_garlic+1)/2, salt, x);
+		flap(x, lambda, (min_garlic+1)/2, publicInput, x);
 
 		for(c=min_garlic; c <= garlic; c++) {
-			flap(x, lambda, c, salt,  x);
+			flap(x, lambda, c, publicInput,  x);
 		  	
 		    if( (c==garlic) && (CLIENT == _client)) {
 		    	System.arraycopy(x, 0, hash, 0, hashlen);
@@ -340,10 +378,12 @@ public abstract class Catena implements PasswordHashingScheme {
 			digest = new Blake2b();
 		}
 		// default is FULL
-		if(fastDigest == null) {
-			fastDigest = digest;
+		if(reducedDigest == null) {
+			fast = false;
+			//reducedDigest = digest;
+		}  else {
+			fast = true;
 		}
-
 		catena(pwd, salt, data, 
 				lambda, min_garlic, garlic, 
 				H_LEN, REGULAR, KEY_DERIVATION_MODE,
@@ -383,7 +423,7 @@ public abstract class Catena implements PasswordHashingScheme {
 		
 		byte[] keystream = new byte[H_LEN];
 		long tmp = uuid;
-
+		
 		initDigests();
 		
 		catena(pwd, salt, data, 
@@ -392,9 +432,7 @@ public abstract class Catena implements PasswordHashingScheme {
  
 		digest.update(key, 0, KEY_LEN);
 		digest.update(long2bytesLE(tmp));
-		// Github version: ===============
 		digest.update((byte) garlic);
-		//================================
 		digest.update(key, 0, KEY_LEN);
 		digest.doFinal(keystream,  0);
 
@@ -403,23 +441,7 @@ public abstract class Catena implements PasswordHashingScheme {
 		}
 	}
 
-	//====== ABSTRACT METHODS ======
-	
-	/** The function f lap consists of three phases: 
-	 * (1) an initialization phase, where the memory of size 2g · n bits 
-	 * is written in a sequential order, 
-	 * (2) the function Γ depending on the public input γ, and 
-	 * (3) a call to a memory-hard function F 
-	 *
-	 * 
-	 * @param x			64 byte vector
-	 * @param lambda	depth of graph
-	 * @param garlic	cost parameter
-	 * @param salt		salt parameter, recommended at least 16 bytes
-	 * @param h			value, holds the result
-	 */
-	protected abstract void flap(byte[] x, int lambda, int garlic,
-			  byte[] salt, byte[] h);
+	//====== ABSTRACT METHODS ======	
 	
 	/**
 	 * Memory-hard function. 
@@ -443,6 +465,16 @@ public abstract class Catena implements PasswordHashingScheme {
 	protected abstract void gamma(int garlic, byte[] salt, byte[] r);
 	
 	/**
+	 * an optional password-dependent randomization layer Φ 
+	 * to provide sequential memory-hardness. 
+	 * Updates the state array. 
+	 * Note: this function is not resistant against cache-timing attacks. 
+	 * 
+	 * @param r			memory consuming state vector
+	 */
+	protected abstract void phi(byte[] r);
+	
+	/**
 	 * returns the default cost parameter
 	 * of the child class 
 	 */
@@ -463,6 +495,30 @@ public abstract class Catena implements PasswordHashingScheme {
 	
 	//====== Implemented Methods ======
 	
+	/** The function f lap consists of three phases: 
+	 * (1) an initialization phase, where the memory of size 2g · n bits 
+	 * is written in a sequential order, 
+	 * (2) the function Γ depending on the public input γ, and 
+	 * (3) a call to a memory-hard function F 
+	 *
+	 * 
+	 * @param x			64 byte vector
+	 * @param lambda	depth of graph
+	 * @param garlic	cost parameter
+	 * @param salt		salt parameter, recommended at least 16 bytes
+	 * @param h			value, holds the result
+	 */
+	protected void flap(byte[] x, int lambda, int garlic, byte[] salt, byte[] h) {
+
+		byte[]  r   = new byte[ (int) (( (1 << garlic) + (1 << (garlic-1)) ) * H_LEN)];
+
+		initmem(x, (1 << garlic), r);
+
+		gamma(garlic, salt, r);
+
+		F(r, garlic, lambda, h);
+	}
+	
 	/**
 	 * Initializes the state vector
 	 * @param x		64 byte vector
@@ -481,7 +537,9 @@ public abstract class Catena implements PasswordHashingScheme {
 		  digest.doFinal(r,  0);
 		  digest.reset();
 		  
-		  fastDigest.reset();
+		  if(reducedDigest != null)
+		  reducedDigest.reset();
+		  //fastDigest.reset();
 	
 		  hashFast(1, r, 0, x, 0, r, H_LEN);
 		    
@@ -535,10 +593,10 @@ public abstract class Catena implements PasswordHashingScheme {
 	 * updates the state array in salt-dependent manner 
 	 * 
 	 * @param garlic
-	 * @param salt
+	 * @param publicInput
 	 * @param r
 	 */
-	protected void saltMix(int garlic, byte[] salt, byte[] r) {
+	protected void saltMix(int garlic, byte[] publicInput, byte[] r) {
 
 		long q = 1 << ((3*garlic+3)/4);
 		int vertexIndex; 
@@ -548,7 +606,7 @@ public abstract class Catena implements PasswordHashingScheme {
 		byte[] tmp2 = new byte[H_LEN];
 
 		// generate the seed		
-		digest.update(salt);
+		digest.update(publicInput);
 		digest.doFinal(tmp, 0);
 		digest.reset();
 		//blake2b = new Blake2b();
@@ -558,7 +616,9 @@ public abstract class Catena implements PasswordHashingScheme {
 
 		initXSState(tmp, tmp2);
 
-		fastDigest.reset();
+		if(reducedDigest != null)
+		reducedDigest.reset();
+		//fastDigest.reset();
 		for(vertexIndex = 0; vertexIndex < q; vertexIndex++){ 
 			j = xorshift1024star() >>> (64 - garlic); 
 			j2 = xorshift1024star() >>> (64 - garlic);
@@ -593,17 +653,71 @@ public abstract class Catena implements PasswordHashingScheme {
 			byte[] hash, int outIndex) {
 		
 		if (fast == true) {
-			fastDigest.setVertexIndex(vIndex % 12);
-		}
-		
-		fastDigest.update(input1, inIndex1, H_LEN);
-		fastDigest.update(input2, inIndex2, H_LEN);
-		fastDigest.doFinal(hash, outIndex);
-		  
-		if (fast == false) {
-			fastDigest.reset();
+			//ReducedDigest reducedDigest = (ReducedDigest) fastDigest;
+			reducedHash(vIndex, input1, inIndex1, input2, inIndex2, hash, outIndex);
+		} else { // FULL
+			fullHash(
+					input1, inIndex1, 
+					input2, inIndex2, 
+					hash, outIndex);
 		}
 	}
+	
+	/**
+	 * This function uses a round-reduced 
+	 * version of a digest. 
+	 * 
+	 * @param vIndex	vertex index, indicates the round 
+	 * 					of the hash function to be used
+	 * @param input1	first input vector for hash function
+	 * @param inIndex1	index of first input vector, the 
+	 * 					length is always H_LEN (64 byte)
+	 * @param input2	second input vector for hash function
+	 * @param inIndex2	index of second input vector, the 
+	 * 					length is always H_LEN (64 byte)
+	 * @param hash		vector to store the resulting hash value
+	 * @param outIndex	index, where hash value is stored
+	 */
+	protected void reducedHash(
+			int vIndex, 
+			byte[] input1, int inIndex1, 
+			byte[] input2, int inIndex2, 
+			byte[] hash, int outIndex) {
+
+		reducedDigest.setVertexIndex(vIndex % 12);
+		
+		reducedDigest.update(input1, inIndex1, H_LEN);
+		reducedDigest.update(input2, inIndex2, H_LEN);
+		reducedDigest.doFinal(hash, outIndex);
+	}
+	
+	/**
+	 * This function uses a digest with all rounds
+	 * 
+	 * @param vIndex	vertex index, indicates the round 
+	 * 					of the hash function to be used
+	 * @param input1	first input vector for hash function
+	 * @param inIndex1	index of first input vector, the 
+	 * 					length is always H_LEN (64 byte)
+	 * @param input2	second input vector for hash function
+	 * @param inIndex2	index of second input vector, the 
+	 * 					length is always H_LEN (64 byte)
+	 * @param hash		vector to store the resulting hash value
+	 * @param outIndex	index, where hash value is stored
+	 */
+	protected void fullHash(
+			byte[] input1, int inIndex1, 
+			byte[] input2, int inIndex2, 
+			byte[] hash, int outIndex) {
+		
+		digest.update(input1, inIndex1, H_LEN);
+		digest.update(input2, inIndex2, H_LEN);
+		digest.doFinal(hash, outIndex);
+		digest.reset();
+	}
+
+	
+	
 	
 	/**
 	 * Initializes the digests. 
@@ -612,11 +726,11 @@ public abstract class Catena implements PasswordHashingScheme {
 		if(digest == null) {
 			digest = new Blake2b();
 		}
-		if(fastDigest == null) {
+		if(reducedDigest == null) {
 			if (fast == true) {
-				fastDigest = new Catena_Blake2b_1();
+				reducedDigest = new Catena_Blake2b_1();
 			} else {
-				fastDigest = digest;
+				//
 			}
 		} 
 	}	
@@ -717,8 +831,8 @@ public abstract class Catena implements PasswordHashingScheme {
 	/**
 	 * @param _fastDigest	 the possibly round-reduced hash function
 	 */
-	public void setFastDigest(Digest _fastDigest) {
-		fastDigest = _fastDigest;
+	public void setReducedDigest(ReducedDigest _fastDigest) {
+		reducedDigest = _fastDigest;
 	}
 	/**
 	 * @return	the hash function for Catena
@@ -730,7 +844,7 @@ public abstract class Catena implements PasswordHashingScheme {
 	 * @return	 the possibly round-reduced hash function
 	 */
 	public Digest getFastDigest() {
-		return fastDigest;
+		return reducedDigest;
 	}
 	/**
 	 * @return 	value that indicates if the 
