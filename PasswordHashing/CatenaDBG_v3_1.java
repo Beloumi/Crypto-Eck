@@ -106,6 +106,9 @@ public class CatenaDBG_v3_1 extends Catena {
 	}
 	
 	@Override
+	protected void phi(byte[] r) {}
+	
+	@Override
 	protected void F(byte[] r, int garlic, int lambda, byte[] h) {
 		DBG(r, garlic, lambda, h);
 	}
@@ -165,7 +168,9 @@ public class CatenaDBG_v3_1 extends Catena {
 				digest.doFinal(r, (int) idx(i,0,co,c,m) * H_LEN);
 				digest.reset();	    	
 				  
-				fastDigest.reset();
+				if (reducedDigest != null){
+					reducedDigest.reset();
+				}
 
 			    for(j = 1; j < c; j++){
 
@@ -215,8 +220,6 @@ public class CatenaDBG_v3_1 extends Catena {
 	public int getLambda() {
 		return LAMBDA;
 	}
-	
-
 	@Override
 	public String getAlgorithmName() {
 		return versionID;
