@@ -18,6 +18,7 @@ This implementation does not contain the key derivation mode. It will be updated
 
 Catena is a Password-Scrambling Framework designed by Christian Forler, Stefan Lucks and Jakob Wenzel. The Password Hashing Competition gave special recognition to Catena and three other schemes. 
 There are two instances: Catena-Dragonfly and Catena-Butterfly. Both can be used with the round-reduced version H' of Blake2b and also as FULL version. 
+Note: This version here is Catena v3.2. There is also a new version v3.3. The code will be updated later. 
 
 The latest Realease 1.52 of Bouncy Castle now contains a slightly modified version of this implementation of Bcrypt. 
 It is only available here for comparison reasons. 
