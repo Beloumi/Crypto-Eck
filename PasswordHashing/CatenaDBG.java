@@ -3,13 +3,13 @@ package cologne.eck.dr.op.crypto.password_hashing;
 
 /**
  * This implementation refers to: 
- * Paper v3.2 and from reference implementation 2015-08-11
+ * Paper v3.3
  */
 
 
 /*
- * Password Hashing Scheme Catena: Instance Catena-Butterfly (v3.2)
- * Copyright (C) 2015  Axel von dem Bruch
+ * Password Hashing Scheme Catena: Instance Catena-Butterfly (v3.3)
+ * Copyright (C) 2016  Axel von dem Bruch
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,15 +28,19 @@ package cologne.eck.dr.op.crypto.password_hashing;
 
 import java.util.Arrays;
 
+import cologne.eck.dr.op.crypto.digest.Blake2b;
+import cologne.eck.dr.op.crypto.digest.Blake2b_1;
+
 
 public class CatenaDBG extends Catena {
 
 	private final static String VERSION_ID = "Butterfly";
 	private final static String VERSION_ID_FULL = "Butterfly-Full";
-	private final static int LAMBDA = 4; //  λ (depth of F)
-	private final static int GARLIC = 16; // defines time and memory requirements
-	private final static int MIN_GARLIC = 16; // minimum garlic
+	private final static int DEFAULT_LAMBDA = 4; //  λ (depth of F)
+	private final static int DEFAULT_GARLIC = 16; // defines time and memory requirements
+	private final static int DEFAULT_MIN_GARLIC = 16; // minimum garlic
 
+	private CatenaHelper helper;
 	
 	/**
 	 * Default constructor. 
@@ -46,6 +50,9 @@ public class CatenaDBG extends Catena {
 	public CatenaDBG() {
 		setVersionID(VERSION_ID);		
 		setFast(true);
+		setDigest(new Blake2b());
+		setFastHash(new Blake2b_1());
+		helper = new CatenaHelper(getDigest(), getFastHash(), isFast());
 	}
 	
 	/**
@@ -54,14 +61,17 @@ public class CatenaDBG extends Catena {
 	 * @param fast	if true, use round-reduced 
 	 * 				hash function for some computations
 	 */
-	public CatenaDBG(boolean fast) {
+	public CatenaDBG(boolean _fast) {
 
-		setFast(fast);
-		if (fast == false) {
+		setFast(_fast);
+		setDigest(new Blake2b());
+		if (_fast == false) {
 			setVersionID(VERSION_ID_FULL);
 		} else {
+			setFastHash(new Blake2b_1());
 			setVersionID(VERSION_ID);
 		}
+		helper = new CatenaHelper(getDigest(), getFastHash(), isFast());
 	}
 	
 	/**
@@ -74,28 +84,91 @@ public class CatenaDBG extends Catena {
 	 * @param overwrite		if true, clear password as soon 
 	 * 						as possible
 	 */
-	public CatenaDBG(boolean fast, boolean overwrite) {
+	public CatenaDBG(boolean _fast, boolean overwrite) {
 
-		setFast(fast);
+		setFast(_fast);
+		setDigest(new Blake2b());
 		setOverwrite(overwrite);
-		if (fast == false) {
+		if (_fast == false) {
 			setVersionID(VERSION_ID_FULL);
 		} else {
 			setVersionID(VERSION_ID);
+			setFastHash(new Blake2b_1());
 		}
+		helper = new CatenaHelper(getDigest(), getFastHash(), isFast());
 	}
 	
-	@Override
+	/**
+	 * an optional randomization layer Γ,
+	 * to harden the memory initialization;
+	 * updates the state array, 
+	 * depending on the public input (salt)
+	 * 
+	 * @param garlic	cost parameter
+	 * @param salt		salt
+	 * @param r			memory consuming state vector
+	 */
 	protected void gamma(int garlic, byte[] salt, byte[] r) {
-		saltMix(garlic, salt, r);		
+		helper.saltMix(garlic, salt, r);		
 	}
 	
-	@Override
-	protected void phi(byte[] r) {}
-	
-	@Override
+	/**
+	 * Memory-hard function: Double-Butterfly Graph
+	 * 
+	 * @param r			the memory consuming state vector
+	 * @param garlic	cost parameter
+	 * @param lambda	depth of graph
+	 * @param h			value, holds the result
+	 */
 	protected void F(byte[] r, int garlic, int lambda, byte[] h) {
-		DBG(r, garlic, lambda, h);
+
+		byte[] tmp = new byte[hLen];
+		long i,j;
+		int k;
+		int co = 0; //carry over from last iteration		  
+
+		long c = 1L << garlic;
+		long m = 1L << (garlic-1); //0.5 * 2^g
+		int l = 2 * garlic;
+		
+		for (k = 0; k < lambda; k++) {
+
+			byte[] tmp3 = new byte[hLen];				  	
+					  
+			for(i = 1; i < l; i++) {
+
+				XOR(r, (int) idx(i-1,c-1,co,c,m) * hLen, 
+						r, (int) idx(i-1,0,co,c,m) * hLen, 
+						tmp);
+
+				helper.H_First(
+						tmp, 0, 
+						r, (int)idx(i-1,sigma(garlic,(int)i-1,0),co,c,m) * hLen , 
+						r, (int)idx(i,0,co,c,m) * hLen);
+				  
+				if (fastHash != null){
+					fastHash.reset();
+				}
+
+			    for(j = 1; j < c; j++){
+
+			    	XOR(r, (int) idx(i,j-1,co,c,m)*hLen, 
+						r, (int) idx(i-1,j,co,c,m)*hLen,
+						tmp);
+
+			    	System.arraycopy(r, (int) idx(i-1,sigma(garlic,(int) (i-1),j),co,c,m)*hLen, 
+						tmp3, 0, 
+						hLen);
+					helper.hashFast((int)j, tmp, 0, tmp3, 0, r, ((int) idx(i,j,co,c,m) * hLen));
+			    }
+			}			    
+			co = (int) ((co + (i-1)) % 3);
+		}			  
+
+		System.arraycopy(r, (int) idx(0,c-1,co,c,m) * hLen, h, 0, hLen);
+
+		Arrays.fill(tmp,  (byte) 0);
+		Arrays.fill(r,  (byte) 0);
 	}
 	
 	
@@ -123,59 +196,6 @@ public class CatenaDBG extends Catena {
 		}
 	}
 	
-	private void DBG(byte[] r, int garlic, int lambda, byte[] h) {
-		
-		byte[] tmp = new byte[H_LEN];
-		long i,j;
-		int k;
-		int co = 0; //carry over from last iteration		  
-
-		long c = 1L << garlic;
-		long m = 1L << (garlic-1); //0.5 * 2^g
-		int l = 2 * garlic;
-		
-		for (k = 0; k < lambda; k++) {
-
-			byte[] tmp3 = new byte[H_LEN];				  	
-					  
-			for(i = 1; i < l; i++) {
-
-				XOR(r, (int) idx(i-1,c-1,co,c,m) * H_LEN, 
-						r, (int) idx(i-1,0,co,c,m) * H_LEN, 
-						tmp);
-
-				digest.update(tmp);
-
-				 System.arraycopy(r, (int) idx(i-1, sigma(garlic,(int) (i-1),0),co,c,m) * H_LEN, 
-						tmp3, 0, 
-						H_LEN);
-				digest.update(tmp3);
-				digest.doFinal(r, (int) idx(i,0,co,c,m) * H_LEN);
-				digest.reset();	    	
-				  
-				if (reducedDigest != null){
-					reducedDigest.reset();
-				}
-
-			    for(j = 1; j < c; j++){
-
-			    	XOR(r, (int) idx(i,j-1,co,c,m)*H_LEN, 
-						r, (int) idx(i-1,j,co,c,m)*H_LEN,
-						tmp);
-
-			    	System.arraycopy(r, (int) idx(i-1,sigma(garlic,(int) (i-1),j),co,c,m)*H_LEN, 
-						tmp3, 0, 
-						H_LEN);
-					hashFast((int)j, tmp, 0, tmp3, 0, r, ((int) idx(i,j,co,c,m) * H_LEN));
-			    }
-			}			    
-			co = (int) ((co + (i-1)) % 3);
-		}			  
-		System.arraycopy(r, (int) idx(0,c-1,co,c,m) * H_LEN, h, 0, H_LEN);
-
-		Arrays.fill(tmp,  (byte) 0);
-		Arrays.fill(r,  (byte) 0);
-	}
 
 	/**
 	 * XOR two vectors and store the result in a vector
@@ -188,22 +208,22 @@ public class CatenaDBG extends Catena {
 	 */
 	private void XOR(byte[] input1, int index1, byte[] input2, int index2, byte[] output) {
 	  int i;
-	  for(i = 0; i < H_LEN; i++){
+	  for(i = 0; i < hLen; i++){
 	    output[i] = (byte) (input1[index1 + i] ^ input2[index2 + i]);
 	  }
 	}
 	
 	@Override
-	public int getGarlic() {
-		return GARLIC;
+	public int getDefaultGarlic() {
+		return DEFAULT_GARLIC;
 	}
 	@Override
-	public int getMinGarlic() {
-		return MIN_GARLIC;
+	public int getDefaultMinGarlic() {
+		return DEFAULT_MIN_GARLIC;
 	}
 	@Override
-	public int getLambda() {
-		return LAMBDA;
+	public int getDefaultLambda() {
+		return DEFAULT_LAMBDA;
 	}
 	@Override
 	public String getAlgorithmName() {
@@ -229,5 +249,14 @@ public class CatenaDBG extends Catena {
 	@Override
 	public void setWipePassword(boolean _wipe) {
 		overwrite = true;
+	}
+
+	@Override
+	public void flap(byte[] x, int lambda, int garlic, byte[] salt, byte[] h) {
+		byte[]  r   = new byte[ (int) (( (1 << garlic) + (1 << (garlic-1)) ) * hLen)];
+
+		helper.initmem(x, (1 << garlic), r);
+		gamma(garlic, salt, r);
+		F(r, garlic, lambda, h);		
 	}
 }
