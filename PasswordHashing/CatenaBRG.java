@@ -46,6 +46,7 @@ public class CatenaBRG extends Catena {
 	 * and does not clear the password
 	 */
 	public CatenaBRG() {
+		setOverwrite(false);
 		setFast(true);
 		setDigest(new Blake2b());
 		setFastHash(new Blake2b_1());
@@ -61,6 +62,7 @@ public class CatenaBRG extends Catena {
 	 */
 	public CatenaBRG(boolean _fast) {
 
+		setOverwrite(false);
 		setDigest(new Blake2b());
 		setFast(_fast);
 		if (_fast == false) {
@@ -138,12 +140,12 @@ public class CatenaBRG extends Catena {
 			    
 			for (long i = 1; i < c; i++) {
 		    	helper.hashFast(
-		    			(int)i, previousR, 
-		    			0, r, 
-		    			Math.abs((int) reverse(i, garlic) * hLen), r, (int)reverse(i, garlic) * hLen);
-		    	System.arraycopy( r, (int)reverse(i, garlic) * hLen,  previousR,  0,  hLen);
-			}
-		    k++;
+		    			(int)i, // vertex index
+		    			previousR, 0, // input1, index1
+		    			r, Math.abs((int) reverse(i, garlic) * hLen), // input2, index2
+		    			previousR, 0);
+		    	System.arraycopy( previousR,  0, r, (int)reverse(i, garlic) * hLen,  hLen);
+			}		    k++;
 		    if (k >= lambda) {
 		      break;
 		    }
@@ -159,7 +161,10 @@ public class CatenaBRG extends Catena {
 
 		    int pIndex = 0;
 		    for (int i = 1; i < c; i++, pIndex += hLen) {
-		    	helper.hashFast( i, r, pIndex, r, pIndex + hLen, r, pIndex + hLen);
+		    	helper.hashFast( i, // vertex index
+		    			r, pIndex, // input1
+		    			r, pIndex + hLen, //input2
+		    			r, pIndex + hLen); // output
 		    }
 		}
 		System.arraycopy(r, (c - 1) * hLen, h, 0, hLen);
