@@ -55,7 +55,7 @@ public abstract class Catena implements PasswordHashingScheme {
 	private final static int CLIENT = 1;
 	
 	// true = clear the password as soon as possible
-	protected boolean overwrite = true;
+	protected boolean overwrite = false;
 	
 	
 	
