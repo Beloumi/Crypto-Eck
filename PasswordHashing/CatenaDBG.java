@@ -48,6 +48,7 @@ public class CatenaDBG extends Catena {
 	 * and does not clear the password
 	 */
 	public CatenaDBG() {
+		setOverwrite(false);
 		setVersionID(VERSION_ID);		
 		setFast(true);
 		setDigest(new Blake2b());
@@ -63,6 +64,7 @@ public class CatenaDBG extends Catena {
 	 */
 	public CatenaDBG(boolean _fast) {
 
+		setOverwrite(false);
 		setFast(_fast);
 		setDigest(new Blake2b());
 		if (_fast == false) {
@@ -131,9 +133,7 @@ public class CatenaDBG extends Catena {
 		long m = 1L << (garlic-1); //0.5 * 2^g
 		int l = 2 * garlic;
 		
-		for (k = 0; k < lambda; k++) {
-
-			byte[] tmp3 = new byte[hLen];				  	
+		for (k = 0; k < lambda; k++) {			  	
 					  
 			for(i = 1; i < l; i++) {
 
@@ -143,7 +143,7 @@ public class CatenaDBG extends Catena {
 
 				helper.H_First(
 						tmp, 0, 
-						r, (int)idx(i-1,sigma(garlic,(int)i-1,0),co,c,m) * hLen , 
+						r, (int)idx(i-1,sigma(garlic,(int)i-1,0),co,c,m) * hLen, 
 						r, (int)idx(i,0,co,c,m) * hLen);
 				  
 				if (fastHash != null){
@@ -156,10 +156,10 @@ public class CatenaDBG extends Catena {
 						r, (int) idx(i-1,j,co,c,m)*hLen,
 						tmp);
 
-			    	System.arraycopy(r, (int) idx(i-1,sigma(garlic,(int) (i-1),j),co,c,m)*hLen, 
-						tmp3, 0, 
-						hLen);
-					helper.hashFast((int)j, tmp, 0, tmp3, 0, r, ((int) idx(i,j,co,c,m) * hLen));
+					helper.hashFast((int)j, 
+							tmp, 0, 
+							r, (int) idx(i-1,sigma(garlic,(int) (i-1),j),co,c,m)*hLen, 
+							r, ((int) idx(i,j,co,c,m) * hLen));
 			    }
 			}			    
 			co = (int) ((co + (i-1)) % 3);
@@ -172,7 +172,7 @@ public class CatenaDBG extends Catena {
 	}
 	
 	
-	long sigma(int g, int i, long j) {
+	private final long sigma(int g, int i, long j) {
 	  if (i < g) {
 	    return (j ^ (1L << (g-1-i))); //diagonal front
 	  }
@@ -181,7 +181,7 @@ public class CatenaDBG extends Catena {
 	  }
 	}
 
-	long idx(long i, long j, int co, long c, long m) {
+	private final long idx(long i, long j, int co, long c, long m) {
 		i += co;
 		if (i % 3 == 0) {
 			return j;
@@ -253,7 +253,7 @@ public class CatenaDBG extends Catena {
 
 	@Override
 	public void flap(byte[] x, int lambda, int garlic, byte[] salt, byte[] h) {
-		byte[]  r   = new byte[ (int) (( (1 << garlic) + (1 << (garlic-1)) ) * hLen)];
+		byte[] r = new byte[ (int) (( (1 << garlic) + (1 << (garlic-1)) ) * hLen) ];
 
 		helper.initmem(x, (1 << garlic), r);
 		gamma(garlic, salt, r);
