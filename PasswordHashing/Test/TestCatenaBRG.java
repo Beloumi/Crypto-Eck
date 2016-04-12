@@ -848,7 +848,7 @@ public class TestCatenaBRG {
 			byte[] key = new byte[keylen];
 			cat = new CatenaBRG(false);
 			cat.deriveKey("password".getBytes(),   
-				       "salt".getBytes(),  
+				       "salt".getBytes(), null, // public input
 				       "data".getBytes(),  
 				       2,10,
 				       10,
