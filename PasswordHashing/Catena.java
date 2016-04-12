@@ -74,7 +74,7 @@ public abstract class Catena implements PasswordHashingScheme {
 			byte[] hash) {
 		
 		catena(pwd, salt, data, 
-		getDefaultLambda(), getDefaultMinGarlic(), getDefaultGarlic(), hash.length,
+		getDefaultLambda(), getDefaultMinGarlic(), getDefaultGarlic(), 
 		REGULAR, PASSWORD_HASHING_MODE, hash);
 	}
 	
@@ -97,7 +97,7 @@ public abstract class Catena implements PasswordHashingScheme {
 		     byte[] hash) {
 		
 		catena(pwd, salt, data, 
-				lambda, garlic, garlic, hash.length,
+				lambda, garlic, garlic, 
 				REGULAR, PASSWORD_HASHING_MODE, hash);
 	}
 	
@@ -110,7 +110,6 @@ public abstract class Catena implements PasswordHashingScheme {
 	 * @param lambda		the depth of the graph
 	 * @param min_garlic	the min. Garlic
 	 * @param garlic		the cost parameter
-	 * @param hashlen		the length of the resulting hash value
 	 * @param _client		indicates if Catena uses server relief or not
 	 * @param tweak_id		the mode to run: PASSWORD_HASHING_MODE 
 	 * 						or KEY_DERIVATION_MODE 
@@ -120,7 +119,7 @@ public abstract class Catena implements PasswordHashingScheme {
 	 */
 	public void catena(
 			 byte[] pwd, byte[] salt, byte[] data,  
-		     int lambda, int  min_garlic, int garlic, int  hashlen,
+		     int lambda, int  min_garlic, int garlic, 
 		     int _client, int  tweak_id, 
 		     byte[] hash) {
 		_catena(
@@ -243,7 +242,7 @@ public abstract class Catena implements PasswordHashingScheme {
 			int lambda, int min_garlic, int garlic, 
 			int hashlen, byte[] x) {
 		catena(pwd, salt, data, 
-				lambda, min_garlic, garlic, hashlen,
+				lambda, min_garlic, garlic, 
 				CLIENT, PASSWORD_HASHING_MODE, x);
 	}
 	
@@ -348,7 +347,7 @@ public abstract class Catena implements PasswordHashingScheme {
 		}
 		catena(pwd, salt, data, 
 				lambda, min_garlic, garlic, 
-				hLen, REGULAR, KEY_DERIVATION_MODE,
+				REGULAR, KEY_DERIVATION_MODE,
 				hash);
 
 		for(i=0; i < len; i++) {
@@ -388,7 +387,7 @@ public abstract class Catena implements PasswordHashingScheme {
 		long tmp = uuid;
 		
 		catena(pwd, salt, data, 
-				lambda, min_garlic, garlic, hashlen,
+				lambda, min_garlic, garlic, 
 				REGULAR, PASSWORD_HASHING_MODE, chash);
  
 		digest.update(key, 0, KEY_LEN);
