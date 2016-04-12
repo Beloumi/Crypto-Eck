@@ -772,7 +772,7 @@ private final static String[] phcTestVectors =
 			byte[] key = new byte[keylen];
 			Catena cat = new CatenaDBG(false);
 			cat.deriveKey("password".getBytes(),   
-				       "salt".getBytes(),  
+				       "salt".getBytes(), null, // public input
 				       "data".getBytes(),  
 				       2,10,
 				       10,
