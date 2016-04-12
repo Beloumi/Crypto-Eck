@@ -133,9 +133,10 @@ public abstract class Catena implements PasswordHashingScheme {
 	 * Catena with arguments from reference implementation and a public input 
 	 * 
 	 * @param pwd			the password
-	 * @param salt			the salt
+	 * @param salt			the salt: if publicInput is used, this value 
+	 * 						is only used for the initial hash
 	 * @param publicInput	the public input for the randomization layer 
-	 * 						if the salt is kept secret
+	 * 						(if the salt is kept secret) to avoid cache-timing attacks
 	 * @param data			the associated data or null
 	 * @param lambda		the depth of the graph
 	 * @param min_garlic	the min. Garlic
@@ -316,7 +317,11 @@ public abstract class Catena implements PasswordHashingScheme {
 	 * derive a cryptographic key with arbitrary length. 
 	 * 
 	 * @param pwd			the password
-	 * @param salt			the salt
+	 * @param salt			the salt: if publicInput is used, this value 
+	 * 						is only used for the initial hash
+	 * @param publicInput	the public input for the randomization layer 
+	 * 						(if the salt is kept secret) to avoid cache-timing attacks.
+	 * 						If value is null, the salt value is used instead
 	 * @param data			the associated data 
 	 * @param lambda		the depth of the graph
 	 * @param min_garlic	min. cost parameter
@@ -327,7 +332,7 @@ public abstract class Catena implements PasswordHashingScheme {
 	 * 						length of the result key
 	 */
 	public void deriveKey(
-			byte[] pwd, byte[] salt, byte[] data,  
+			byte[] pwd, byte[] salt, byte[] publicInput, byte[] data,  
 	       int lambda, int  min_garlic, int garlic, 
 	       int key_id, byte[] key) {
 		
@@ -345,7 +350,7 @@ public abstract class Catena implements PasswordHashingScheme {
 		}  else {
 			fast = true;
 		}
-		catena(pwd, salt, data, 
+		_catena(pwd, salt, publicInput, data, 
 				lambda, min_garlic, garlic, 
 				REGULAR, KEY_DERIVATION_MODE,
 				hash);
