@@ -837,7 +837,7 @@ private final static String[] phcTestVectors =
 			cat.catena(Password[i].getBytes(), 
 					Salt[i].getBytes(),  
 					AssociatedData[i], 
-					Lambda[i], Garlic[i], Garlic[i] +3, 64,
+					Lambda[i], Garlic[i], Garlic[i] +3, 
 					Catena.REGULAR, 0,
 					hash);
 
